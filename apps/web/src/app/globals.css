@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Root / theme ─────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: dark;
+  --bg: #070710;
+  --surface: #0d0d1a;
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --text: #f5f6ff;
+  --muted: #a0a3bd;
+}
+
+[data-theme='light'] {
+  --bg: #f7f7fb;
+  --surface: #ffffff;
+  --border: rgba(10, 10, 30, 0.08);
+  --border-strong: rgba(10, 10, 30, 0.14);
+  --text: #0b0b16;
+  --muted: #5b5e78;
+  color-scheme: light;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-inter), sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-space-grotesk), sans-serif;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+h1 {
+  font-size: clamp(2.2rem, 5vw, 4rem);
+}
+h2 {
+  font-size: clamp(1.6rem, 3vw, 2.5rem);
+}
+
+small {
+  font-size: 0.875rem;
+}
+
+/* ── Frosted glass surface ────────────────────────────────────────────────── */
+.glass {
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 1.25rem;
+}
+
+.glass:hover {
+  border-color: var(--border-strong);
+}
+
+/* ── Gradient (aurora) text ───────────────────────────────────────────────── */
+.text-aurora {
+  background: linear-gradient(92deg, #7c5cff, #5b7cfa, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* ── Gradient hairline border (for badges/cards) ──────────────────────────── */
+.border-aurora {
+  position: relative;
+  border-radius: 1rem;
+}
+
+.border-aurora::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: linear-gradient(92deg, #7c5cff, #22d3ee);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Aurora mesh background ───────────────────────────────────────────────── */
+/* Static gradients + cheap transform drift only.
+   Mount after first paint; disable under reduced-motion. */
+.aurora-mesh {
+  position: absolute;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(40% 35% at 20% 20%, rgba(124, 92, 255, 0.22), transparent 60%),
+    radial-gradient(35% 30% at 80% 30%, rgba(34, 211, 238, 0.16), transparent 60%),
+    radial-gradient(40% 40% at 60% 80%, rgba(91, 124, 250, 0.16), transparent 60%);
+  filter: blur(40px);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .aurora-mesh {
+    animation: aurora-drift 18s ease-in-out infinite;
+  }
+}
+
+/* ── Skeleton shimmer ─────────────────────────────────────────────────────── */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  transform: translateX(-100%);
+  animation: shimmer 1.6s infinite;
+}
+
+/* ── Focus ring ───────────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid #7c5cff;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Scrollbar (subtle, not hidden) ──────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Selection ────────────────────────────────────────────────────────────── */
+::selection {
+  background: rgba(124, 92, 255, 0.3);
+  color: #f5f6ff;
+}

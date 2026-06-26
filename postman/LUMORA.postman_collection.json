@@ -1,0 +1,741 @@
+{
+  "info": {
+    "name": "LUMORA API",
+    "description": "Full API collection for LUMORA \u2014 test all endpoints in order",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base",
+      "value": "http://localhost:4000/api/v1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /health",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /auth/register",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/register",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"Test1234!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /auth/login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const csrf = pm.cookies.get('csrf');",
+                  "if (csrf) pm.collectionVariables.set('csrfToken', csrf);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/login",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@lumora.app\",\n  \"password\": \"Lumora@123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /auth/me",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/auth/me"
+          }
+        },
+        {
+          "name": "POST /auth/refresh",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/refresh"
+          }
+        },
+        {
+          "name": "POST /auth/logout",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/logout",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "POST /auth/forgot-password",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/forgot-password",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@lumora.app\"\n}"
+            }
+          }
+        },
+        {
+          "name": "POST /auth/reset-password",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/reset-password",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"password\": \"NewPass1234!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /auth/me/addresses",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/auth/me/addresses",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /auth/me/addresses",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/auth/me/addresses",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Alice Chen\",\n  \"phone\": \"5551234567\",\n  \"line1\": \"123 Main St\",\n  \"city\": \"New York\",\n  \"state\": \"NY\",\n  \"postalCode\": \"10001\",\n  \"country\": \"US\",\n  \"isDefault\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /auth/me/addresses/:id",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base}}/auth/me/addresses/{{addressId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isDefault\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /auth/me/addresses/:id",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base}}/auth/me/addresses/{{addressId}}",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "GET /products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base}}/products?limit=10&page=1",
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "q",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "popular",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /products/:slug",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/products/sony-wh-1000xm5"
+          }
+        },
+        {
+          "name": "GET /products/featured",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/products?featured=true&limit=4"
+          }
+        },
+        {
+          "name": "POST /products (admin create)",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/products",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Test Product\",\n  \"slug\": \"test-product\",\n  \"description\": \"A test product\",\n  \"price\": 99.99,\n  \"category\": \"{{categoryId}}\",\n  \"brand\": \"TestBrand\",\n  \"images\": [],\n  \"stock\": 50,\n  \"sku\": \"TEST-001\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /products/:id (admin update)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base}}/products/{{productId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 25,\n  \"price\": 89.99\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /products/:id (admin soft delete)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base}}/products/{{productId}}",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "GET /categories",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/categories"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "GET /cart",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/cart",
+            "header": []
+          }
+        },
+        {
+          "name": "POST /cart/items",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/cart/items",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"qty\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /cart/items/:productId",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base}}/cart/items/{{productId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"qty\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /cart/items/:productId",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base}}/cart/items/{{productId}}",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "DELETE /cart (clear)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base}}/cart",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "POST /cart/coupon",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/cart/coupon",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"SAVE10\"\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /cart/coupon",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base}}/cart/coupon",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "POST /cart/merge",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/cart/merge",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [{\"productId\": \"{{productId}}\", \"qty\": 1}]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wishlist",
+      "item": [
+        {
+          "name": "GET /wishlist",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/wishlist"
+          }
+        },
+        {
+          "name": "POST /wishlist/:productId",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/wishlist/REPLACE_WITH_PRODUCT_ID",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "POST /orders",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/orders",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shippingAddress\": {\n    \"line1\": \"123 Test St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"zip\": \"10001\",\n    \"country\": \"US\"\n  },\n  \"payment\": {\n    \"cardNumber\": \"4532015112830366\",\n    \"expMonth\": 12,\n    \"expYear\": 2027,\n    \"cvc\": \"123\"\n  },\n  \"couponCode\": \"\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /orders",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/orders"
+          }
+        },
+        {
+          "name": "GET /orders/:orderNumber",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/orders/REPLACE_WITH_ORDER_NUMBER"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reviews",
+      "item": [
+        {
+          "name": "GET /reviews (by product)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base}}/reviews?productId=REPLACE_WITH_PRODUCT_ID",
+              "query": [
+                {
+                  "key": "productId",
+                  "value": "REPLACE_WITH_PRODUCT_ID"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /reviews",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/reviews",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"REPLACE_WITH_PRODUCT_ID\",\n  \"rating\": 5,\n  \"title\": \"Great product\",\n  \"body\": \"Really happy with this purchase.\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {
+          "name": "GET /admin/stats/overview",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/stats/overview"
+          }
+        },
+        {
+          "name": "GET /admin/orders",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/orders"
+          }
+        },
+        {
+          "name": "PATCH /admin/orders/:id/status",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base}}/admin/orders/REPLACE_WITH_ORDER_ID/status",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"shipped\"\n}"
+            }
+          }
+        },
+        {
+          "name": "GET /admin/users",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/users"
+          }
+        },
+        {
+          "name": "GET /admin/reviews",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/reviews"
+          }
+        },
+        {
+          "name": "POST /admin/uploads/sign",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/admin/uploads/sign",
+            "header": [
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              }
+            ]
+          }
+        },
+        {
+          "name": "GET /admin/stats/sales",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/stats/sales?days=30",
+            "header": []
+          }
+        },
+        {
+          "name": "GET /admin/stats/top",
+          "request": {
+            "method": "GET",
+            "url": "{{base}}/admin/stats/top",
+            "header": []
+          }
+        },
+        {
+          "name": "PATCH /admin/users/:id",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base}}/admin/users/{{userId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\"\n}"
+            }
+          }
+        },
+        {
+          "name": "PATCH /admin/reviews/:id",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base}}/admin/reviews/{{reviewId}}",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"isApproved\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "DELETE /admin/reviews/:id",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base}}/admin/reviews/{{reviewId}}",
+            "header": [
+              {
+                "key": "x-csrf-token",
+                "value": "{{csrfToken}}"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI",
+      "item": [
+        {
+          "name": "POST /ai/chat (SSE)",
+          "request": {
+            "method": "POST",
+            "url": "{{base}}/ai/chat",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              },
+              {
+                "key": "X-CSRF-Token",
+                "value": "{{csrfToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"messages\": [\n    { \"role\": \"user\", \"content\": \"Best noise-cancelling earbuds?\" }\n  ]\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

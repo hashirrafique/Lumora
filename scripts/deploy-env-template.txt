@@ -1,0 +1,81 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# LUMORA — Deployment Environment Variables
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# HOW TO USE
+# ----------
+# 1. Fill in the 4 credential blocks below (marked with TODO).
+# 2. Copy the RENDER section into Render → Environment → Add from text.
+# 3. Copy the VERCEL section into Vercel → Settings → Environment Variables.
+# 4. After first deploy, run the seed in the Render shell:
+#    $ node dist/seed.js
+#
+# ═══════════════════════════════════════════════════════════════════════════════
+# RENDER  (paste into apps/api service)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+NODE_ENV=production
+PORT=4000
+
+# TODO: MongoDB Atlas — create a free M0 cluster at cloud.mongodb.com
+# Format: mongodb+srv://<user>:<pass>@<cluster>.mongodb.net/lumora?retryWrites=true&w=majority
+MONGODB_URI=
+
+# TODO: Upstash Redis — create a free database at upstash.com → copy "UPSTASH_REDIS_URL"
+REDIS_URL=
+
+# JWT — generate a strong secret (e.g. openssl rand -hex 32)
+JWT_SECRET=replace-with-a-64-char-random-hex-string
+JWT_EXPIRES_IN=7d
+
+# CORS — your Vercel frontend URL
+CORS_ORIGINS=https://lumora.vercel.app
+
+# TODO: Cloudinary — create a free account at cloudinary.com → Settings → API Keys
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# TODO: Groq AI — create a free key at console.groq.com → API Keys
+GROQ_API_KEY=
+
+# Email (optional — set to true to enable password-reset emails)
+# Uses nodemailer with Gmail App Password or SMTP relay
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+EMAIL_FROM=noreply@lumora.app
+
+# Stripe (optional — payment simulation works without real keys)
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VERCEL  (paste into apps/web service)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+NEXT_PUBLIC_API_URL=https://lumora-api.onrender.com
+NEXT_PUBLIC_WS_URL=wss://lumora-api.onrender.com
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LOCAL DEV  (copy to apps/api/.env and apps/web/.env.local)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# apps/api/.env
+# NODE_ENV=development
+# PORT=4000
+# MONGODB_URI=mongodb://localhost:27017/lumora
+# REDIS_URL=redis://localhost:6379
+# JWT_SECRET=dev-secret-change-in-production
+# JWT_EXPIRES_IN=7d
+# CORS_ORIGINS=http://localhost:3000
+# GROQ_API_KEY=<your key>
+# CLOUDINARY_CLOUD_NAME=<your cloud>
+# CLOUDINARY_API_KEY=<your key>
+# CLOUDINARY_API_SECRET=<your secret>
+# STRIPE_SECRET_KEY=sk_test_...
+
+# apps/web/.env.local
+# NEXT_PUBLIC_API_URL=http://localhost:4000
+# NEXT_PUBLIC_WS_URL=ws://localhost:4000

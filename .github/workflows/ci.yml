@@ -49,7 +49,7 @@ jobs:
         run: npm ci
 
       - name: Test (${{ matrix.app }})
-        run: npm test --workspace=apps/${{ matrix.app }}
+        run: npm run test:coverage --workspace=apps/${{ matrix.app }}
 
   build:
     name: Build

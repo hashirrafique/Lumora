@@ -1,18 +1,21 @@
 # LUMORA
 
-> *Shop the future. Beautifully.*
+> _Shop the future. Beautifully._
 
 A premium e-commerce + AI concierge platform built as a full-stack monorepo. Distinctive Aurora Glass design system, real-time stock/order updates, streaming AI shopping assistant.
 
 **Live URLs (after deploy):**
+
 - Web: `https://lumora.vercel.app`
 - API: `https://lumora-api.onrender.com`
 
 **Demo credentials (seeded by `npm run seed`):**
 | Role | Email | Password |
 |---|---|---|
-| Admin | `admin@lumora.dev` | `Admin1234!` |
-| Customer | `alice@lumora.dev` | `Pass1234!` |
+| Admin | `admin@lumora.app` | `Lumora@123` |
+| Customer | `alice@lumora.app` | `Lumora@123` |
+
+**Screenshots** _(run `npm run dev` in `apps/web` and `apps/api` to view locally)_
 
 ---
 
@@ -51,6 +54,7 @@ lumora/
 ## Local Setup
 
 ### Prerequisites
+
 - Node.js 20 (`nvm use` reads `.nvmrc`)
 - npm 10+
 - Docker + Docker Compose (optional — for the full local stack)
@@ -163,9 +167,11 @@ node dist/seed.js
 ### 8. Cross-origin cookies
 
 When web (Vercel) and API (Render) are on different domains, cookies need:
+
 ```
 httpOnly; Secure; SameSite=None; Path=/
 ```
+
 This is set automatically when `NODE_ENV=production`. Ensure your API is served over HTTPS (Render provides this by default).
 
 ---
@@ -203,21 +209,21 @@ sudo certbot --nginx -d lumora.app -d www.lumora.app
 
 See `.env.example` for all variables with descriptions.
 
-| Variable | App | Required |
-|---|---|---|
-| `NODE_ENV` | API | Yes |
-| `PORT` | API | No (default 4000) |
-| `CORS_ORIGINS` | API | Yes |
-| `MONGODB_URI` | API | Yes |
-| `REDIS_URL` | API | Yes |
-| `JWT_ACCESS_SECRET` | API | Yes (≥32 chars) |
-| `JWT_REFRESH_SECRET` | API | Yes (≥32 chars) |
-| `GROQ_API_KEY` | API | Yes (AI concierge) |
-| `CLOUDINARY_*` | API | Yes (image uploads) |
-| `RESEND_API_KEY` | API | No (logs to console if absent) |
-| `NEXT_PUBLIC_API_URL` | Web | Yes |
-| `NEXT_PUBLIC_SOCKET_URL` | Web | Yes |
-| `NEXT_PUBLIC_SITE_URL` | Web | Yes |
+| Variable                 | App | Required                       |
+| ------------------------ | --- | ------------------------------ |
+| `NODE_ENV`               | API | Yes                            |
+| `PORT`                   | API | No (default 4000)              |
+| `CORS_ORIGINS`           | API | Yes                            |
+| `MONGODB_URI`            | API | Yes                            |
+| `REDIS_URL`              | API | Yes                            |
+| `JWT_ACCESS_SECRET`      | API | Yes (≥32 chars)                |
+| `JWT_REFRESH_SECRET`     | API | Yes (≥32 chars)                |
+| `GROQ_API_KEY`           | API | Yes (AI concierge)             |
+| `CLOUDINARY_*`           | API | Yes (image uploads)            |
+| `RESEND_API_KEY`         | API | No (logs to console if absent) |
+| `NEXT_PUBLIC_API_URL`    | Web | Yes                            |
+| `NEXT_PUBLIC_SOCKET_URL` | Web | Yes                            |
+| `NEXT_PUBLIC_SITE_URL`   | Web | Yes                            |
 
 ---
 
@@ -264,14 +270,14 @@ Full manual checklist from `specs/07_qa-and-dod.md` to be completed on live URLs
 
 ## Decisions Log
 
-| Decision | Reason |
-|---|---|
-| `npm` workspaces over `pnpm` | Zero additional tooling; Node 20 workspace hoisting is sufficient for this repo size |
-| `data-theme` attribute on `<html>` | Matches `[data-theme="light"]` selector in spec globals.css verbatim; avoids FOUC via inline script |
-| Flat ESLint config (v9+) | Avoids `.eslintrc` deprecation warnings on Node 20 |
-| Admin pagination inside `data` field | `apiFetch` only returns `json.data`; bundling `{ data, meta }` inside the `data` field preserves the TypeScript contract without a separate code path |
-| `StaggerGrid` wraps product arrays | Framer Motion `useInView` exits when the component unmounts — using a wrapper avoids prop-drilling `inView` through every `ProductCard` |
-| `NEXT_PUBLIC_*` vars baked at build time | Next.js requirement; Vercel re-runs the build on env changes |
-| Simulated checkout behind `PaymentProvider` interface | Stripe unavailable in region; the interface is the seam for a real gateway to drop in later |
-| Groq on server only, never in client bundle | API key would be visible in the browser if called client-side; SSE from the API to the browser is the correct pattern |
-| `SameSite=None; Secure` cookies in production | Web (Vercel) and API (Render) are on different domains; `SameSite=Lax` silently drops cross-site cookies in modern browsers |
+| Decision                                              | Reason                                                                                                                                                |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm` workspaces over `pnpm`                          | Zero additional tooling; Node 20 workspace hoisting is sufficient for this repo size                                                                  |
+| `data-theme` attribute on `<html>`                    | Matches `[data-theme="light"]` selector in spec globals.css verbatim; avoids FOUC via inline script                                                   |
+| Flat ESLint config (v9+)                              | Avoids `.eslintrc` deprecation warnings on Node 20                                                                                                    |
+| Admin pagination inside `data` field                  | `apiFetch` only returns `json.data`; bundling `{ data, meta }` inside the `data` field preserves the TypeScript contract without a separate code path |
+| `StaggerGrid` wraps product arrays                    | Framer Motion `useInView` exits when the component unmounts — using a wrapper avoids prop-drilling `inView` through every `ProductCard`               |
+| `NEXT_PUBLIC_*` vars baked at build time              | Next.js requirement; Vercel re-runs the build on env changes                                                                                          |
+| Simulated checkout behind `PaymentProvider` interface | Stripe unavailable in region; the interface is the seam for a real gateway to drop in later                                                           |
+| Groq on server only, never in client bundle           | API key would be visible in the browser if called client-side; SSE from the API to the browser is the correct pattern                                 |
+| `SameSite=None; Secure` cookies in production         | Web (Vercel) and API (Render) are on different domains; `SameSite=Lax` silently drops cross-site cookies in modern browsers                           |

@@ -23,12 +23,16 @@ const TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
     type: 'function',
     function: {
       name: 'search_products',
-      description: 'Search the LUMORA catalog. Use for any product discovery, comparison, or recommendation.',
+      description:
+        'Search the LUMORA catalog. Use for any product discovery, comparison, or recommendation.',
       parameters: {
         type: 'object',
         properties: {
           query: { type: 'string', description: "free text, e.g. 'noise cancelling headphones'" },
-          category: { type: 'string', enum: ['audio', 'wearables', 'computing', 'home-tech', 'lifestyle'] },
+          category: {
+            type: 'string',
+            enum: ['electronics', 'audio', 'smart-home', 'wearables', 'photography', 'gaming'],
+          },
           maxPrice: { type: 'number' },
           minRating: { type: 'number' },
           inStockOnly: { type: 'boolean', default: true },
@@ -134,7 +138,9 @@ async function execSearchProducts(args: {
   const defaultSort: Record<string, 1 | -1> = { soldCount: -1 }
   const sort = args.sort ? (sortMap[args.sort] ?? defaultSort) : defaultSort
 
-  const products = await Product.find(filter).sort(sort).limit(6)
+  const products = await Product.find(filter)
+    .sort(sort)
+    .limit(6)
     .select('title slug price ratingAvg stock images specs')
     .lean()
 
@@ -152,9 +158,14 @@ async function execSearchProducts(args: {
 
 async function execGetProduct(args: { idOrSlug: string }) {
   const product = await Product.findOne({
-    $or: [{ slug: args.idOrSlug }, { _id: args.idOrSlug.match(/^[a-f\d]{24}$/i) ? args.idOrSlug : null }],
+    $or: [
+      { slug: args.idOrSlug },
+      { _id: args.idOrSlug.match(/^[a-f\d]{24}$/i) ? args.idOrSlug : null },
+    ],
     isActive: true,
-  }).populate('category', 'name slug').lean()
+  })
+    .populate('category', 'name slug')
+    .lean()
   if (!product) return { error: 'Product not found' }
   return {
     id: String(product._id),
@@ -172,7 +183,11 @@ async function execGetProduct(args: { idOrSlug: string }) {
   }
 }
 
-async function execRecommend(args: { need: string; budget?: number; category?: string }): Promise<SlimProduct[]> {
+async function execRecommend(args: {
+  need: string
+  budget?: number
+  category?: string
+}): Promise<SlimProduct[]> {
   const filter: Record<string, unknown> = { isActive: true, stock: { $gt: 0 } }
   if (args.budget) filter['price'] = { $lte: args.budget }
   if (args.category) filter['categorySlug'] = args.category
@@ -199,9 +214,22 @@ async function execRecommend(args: { need: string; budget?: number; category?: s
 async function execAddToCart(
   args: { productId: string; qty?: number; variant?: { name: string; value: string } },
   userId?: string
-): Promise<{ tool_action: { type: 'add_to_cart'; productId: string; qty: number; variant?: { name: string; value: string }; title?: string }; message: string }> {
+): Promise<{
+  tool_action: {
+    type: 'add_to_cart'
+    productId: string
+    qty: number
+    variant?: { name: string; value: string }
+    title?: string
+  }
+  message: string
+}> {
   const product = await Product.findById(args.productId).select('title stock').lean()
-  if (!product) return { tool_action: { type: 'add_to_cart', productId: args.productId, qty: 1 }, message: 'Product not found.' }
+  if (!product)
+    return {
+      tool_action: { type: 'add_to_cart', productId: args.productId, qty: 1 },
+      message: 'Product not found.',
+    }
 
   const qty = args.qty ?? 1
   if (product.stock < qty) {
@@ -220,7 +248,13 @@ async function execAddToCart(
   }
 
   return {
-    tool_action: { type: 'add_to_cart', productId: args.productId, qty, variant: args.variant, title: product.title },
+    tool_action: {
+      type: 'add_to_cart',
+      productId: args.productId,
+      qty,
+      variant: args.variant,
+      title: product.title,
+    },
     message: `Added ${qty}× ${product.title} to your cart.`,
   }
 }
@@ -258,7 +292,9 @@ export async function streamChat(
   res: Response
 ): Promise<void> {
   if (!env.GROQ_API_KEY) {
-    sseWrite(res, 'delta', { text: "I'm not configured yet — the GROQ_API_KEY is missing. Ask the store owner to set it up!" })
+    sseWrite(res, 'delta', {
+      text: "I'm not configured yet — the GROQ_API_KEY is missing. Ask the store owner to set it up!",
+    })
     sseWrite(res, 'done', {})
     return
   }
@@ -269,13 +305,20 @@ export async function streamChat(
     ...messages,
   ]
 
-  const pendingActions: { type: string; productId?: string; qty?: number; variant?: { name: string; value: string } }[] = []
+  const pendingActions: {
+    type: string
+    productId?: string
+    qty?: number
+    variant?: { name: string; value: string }
+  }[] = []
   let toolRounds = 0
   let model = env.GROQ_MODEL
 
   async function runCompletion(): Promise<void> {
     if (toolRounds >= 3) {
-      sseWrite(res, 'delta', { text: "\n\nI've done my research — let me know if you'd like more details!" })
+      sseWrite(res, 'delta', {
+        text: "\n\nI've done my research — let me know if you'd like more details!",
+      })
       return
     }
 
@@ -328,7 +371,11 @@ export async function streamChat(
                 function: { name: currentToolCall.name, arguments: currentToolCall.argsJson },
               })
             }
-            currentToolCall = { id: tc.id, name: tc.function?.name ?? '', argsJson: tc.function?.arguments ?? '' }
+            currentToolCall = {
+              id: tc.id,
+              name: tc.function?.name ?? '',
+              argsJson: tc.function?.arguments ?? '',
+            }
             sseWrite(res, 'tool', { name: tc.function?.name ?? '', status: 'running' })
           } else if (currentToolCall && tc.function?.arguments) {
             currentToolCall.argsJson += tc.function.arguments
@@ -369,7 +416,10 @@ export async function streamChat(
             result = await execRecommend(args as Parameters<typeof execRecommend>[0])
             break
           case 'add_to_cart': {
-            const cartResult = await execAddToCart(args as Parameters<typeof execAddToCart>[0], userId)
+            const cartResult = await execAddToCart(
+              args as Parameters<typeof execAddToCart>[0],
+              userId
+            )
             pendingActions.push(cartResult.tool_action)
             result = { message: cartResult.message }
             break

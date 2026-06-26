@@ -13,6 +13,7 @@ export default defineConfig({
       reporter: ['text', 'json-summary'],
       include: ['src/store/**', 'src/lib/**', 'src/components/**'],
       exclude: ['**/*.d.ts', '**/__tests__/**'],
+      thresholds: { lines: 60, functions: 60 },
     },
   },
   resolve: {

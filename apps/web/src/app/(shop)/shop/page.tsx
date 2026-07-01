@@ -1,8 +1,11 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { Suspense, useState, useCallback, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { spring } from '@/lib/motion'
 import {
   SlidersHorizontal,
   Search,
@@ -18,7 +21,6 @@ import { ProductCard } from '@/components/product/ProductCard'
 import { QuickView } from '@/components/ui/QuickView'
 import { SkeletonCard } from '@/components/ui/SkeletonCard'
 import { EmptyState } from '@/components/ui/EmptyState'
-import { StaggerGrid } from '@/components/ui/FadeUp'
 import { Price } from '@/components/ui/Price'
 import { RatingStars } from '@/components/ui/RatingStars'
 import { useProducts, useCategories } from '@/lib/hooks/useProducts'
@@ -647,11 +649,25 @@ function ShopContent() {
                   ))}
                 </div>
               ) : (
-                <StaggerGrid className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {(data?.products ?? []).map((p) => (
-                    <ProductCard key={p._id} product={p} onQuickView={setQuickViewProduct} />
-                  ))}
-                </StaggerGrid>
+                <LayoutGroup>
+                  <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <AnimatePresence mode="popLayout">
+                      {(data?.products ?? []).map((p) => (
+                        <motion.div
+                          key={p._id}
+                          layout
+                          layoutId={`product-${p._id}`}
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={spring.snappy}
+                        >
+                          <ProductCard product={p} onQuickView={setQuickViewProduct} />
+                        </motion.div>
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                </LayoutGroup>
               )}
 
               <Pagination currentPage={currentPage} totalPages={totalPages} setParam={setParam} />

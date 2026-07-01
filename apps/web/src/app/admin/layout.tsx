@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Users,
   Star,
+  Tag,
   LogOut,
   ChevronRight,
 } from 'lucide-react'
@@ -22,6 +23,7 @@ const NAV = [
   { href: '/admin/orders', label: 'Orders', icon: ShoppingBag },
   { href: '/admin/users', label: 'Users', icon: Users },
   { href: '/admin/reviews', label: 'Reviews', icon: Star },
+  { href: '/admin/discounts', label: 'Discounts', icon: Tag },
 ]
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -41,7 +43,10 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   if (!user || user.role !== 'admin') {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-10 h-10 rounded-full border-2 border-violet border-t-transparent animate-spin" aria-label="Loading" />
+        <div
+          className="w-10 h-10 rounded-full border-2 border-violet border-t-transparent animate-spin"
+          aria-label="Loading"
+        />
       </div>
     )
   }
@@ -97,9 +102,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
       {/* Main content */}
       <main className="flex-1 min-w-0 overflow-auto">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          {children}
-        </div>
+        <div className="max-w-6xl mx-auto px-6 py-8">{children}</div>
       </main>
     </div>
   )

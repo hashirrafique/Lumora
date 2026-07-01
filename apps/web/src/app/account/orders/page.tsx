@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import Link from 'next/link'
 import { Package } from 'lucide-react'
 import { useOrders } from '@/lib/hooks/useOrders'
@@ -45,7 +47,11 @@ export default function OrdersPage() {
           icon={<Package size={24} />}
           title="No orders yet"
           description="Your order history will appear here once you make a purchase."
-          action={<Link href="/shop" className="btn-primary">Start shopping</Link>}
+          action={
+            <Link href="/shop" className="btn-primary">
+              Start shopping
+            </Link>
+          }
         />
       ) : (
         <div className="space-y-3">
@@ -66,7 +72,9 @@ export default function OrdersPage() {
                   </p>
                   <p className="text-xs text-[var(--muted)]">
                     {new Date(order.createdAt).toLocaleDateString('en-US', {
-                      month: 'long', day: 'numeric', year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
                     })}
                   </p>
                 </div>

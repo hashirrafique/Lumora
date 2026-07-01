@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState } from 'react'
 import { MapPin, Plus, Star, Trash2 } from 'lucide-react'
 import { EmptyState } from '@/components/ui/EmptyState'
@@ -86,20 +88,23 @@ export default function AddressesPage() {
         >
           <h2 className="font-semibold">{editId ? 'Edit address' : 'New address'}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {([
-              ['Full name', 'fullName', 'text', true],
-              ['Phone', 'phone', 'tel', true],
-              ['Address line 1', 'line1', 'text', true],
-              ['Address line 2', 'line2', 'text', false],
-              ['City', 'city', 'text', true],
-              ['State / Province', 'state', 'text', false],
-              ['Postal code', 'postalCode', 'text', true],
-              ['Country', 'country', 'text', true],
-              ['Label (e.g. Home)', 'label', 'text', false],
-            ] as [string, keyof typeof form, string, boolean][]).map(([label, key, type, req]) => (
+            {(
+              [
+                ['Full name', 'fullName', 'text', true],
+                ['Phone', 'phone', 'tel', true],
+                ['Address line 1', 'line1', 'text', true],
+                ['Address line 2', 'line2', 'text', false],
+                ['City', 'city', 'text', true],
+                ['State / Province', 'state', 'text', false],
+                ['Postal code', 'postalCode', 'text', true],
+                ['Country', 'country', 'text', true],
+                ['Label (e.g. Home)', 'label', 'text', false],
+              ] as [string, keyof typeof form, string, boolean][]
+            ).map(([label, key, type, req]) => (
               <div key={key} className={key === 'line1' ? 'sm:col-span-2' : ''}>
                 <label className="block text-xs text-[var(--muted)] mb-1" htmlFor={`addr-${key}`}>
-                  {label}{req && <span className="text-danger ml-0.5">*</span>}
+                  {label}
+                  {req && <span className="text-danger ml-0.5">*</span>}
                 </label>
                 <input
                   id={`addr-${key}`}
@@ -177,10 +182,12 @@ export default function AddressesPage() {
                   )}
                 </div>
                 <p className="text-sm text-[var(--muted)] mt-0.5">
-                  {addr.line1}{addr.line2 ? `, ${addr.line2}` : ''}
+                  {addr.line1}
+                  {addr.line2 ? `, ${addr.line2}` : ''}
                 </p>
                 <p className="text-sm text-[var(--muted)]">
-                  {addr.city}{addr.state ? `, ${addr.state}` : ''} {addr.postalCode}, {addr.country}
+                  {addr.city}
+                  {addr.state ? `, ${addr.state}` : ''} {addr.postalCode}, {addr.country}
                 </p>
                 <p className="text-sm text-[var(--muted)]">{addr.phone}</p>
               </div>
@@ -189,7 +196,9 @@ export default function AddressesPage() {
                   <button
                     type="button"
                     aria-label="Set as default"
-                    onClick={() => updateAddress.mutate({ id: addr._id!, addr: { isDefault: true } })}
+                    onClick={() =>
+                      updateAddress.mutate({ id: addr._id!, addr: { isDefault: true } })
+                    }
                     className="p-2 rounded-xl hover:bg-white/10 text-[var(--muted)] hover:text-violet transition-colors"
                   >
                     <Star size={15} />

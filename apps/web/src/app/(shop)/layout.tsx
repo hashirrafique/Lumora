@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import type { ReactNode } from 'react'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
@@ -8,6 +10,8 @@ import { BackToTop } from '@/components/ui/BackToTop'
 import { ToastProvider } from '@/components/ui/Toast'
 import { CookieBanner } from '@/components/ui/CookieBanner'
 import { CompareBar } from '@/components/ui/CompareBar'
+import { CartFly } from '@/components/ui/CartFly'
+import { OnboardingModal } from '@/components/ui/OnboardingModal'
 
 export default function ShopLayout({ children }: { children: ReactNode }) {
   return (
@@ -21,6 +25,8 @@ export default function ShopLayout({ children }: { children: ReactNode }) {
       <BackToTop />
       <CookieBanner />
       <CompareBar />
+      <CartFly />
+      <OnboardingModal />
     </ToastProvider>
   )
 }

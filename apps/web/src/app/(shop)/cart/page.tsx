@@ -1,10 +1,18 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ShoppingCart, Trash2, Tag, X } from 'lucide-react'
-import { useCart, useUpdateCartItem, useRemoveCartItem, useApplyCoupon, useRemoveCoupon } from '@/lib/hooks/useCart'
+import {
+  useCart,
+  useUpdateCartItem,
+  useRemoveCartItem,
+  useApplyCoupon,
+  useRemoveCoupon,
+} from '@/lib/hooks/useCart'
 import { QtyStepper } from '@/components/ui/QtyStepper'
 import { EmptyState } from '@/components/ui/EmptyState'
 import type { CartItemDTO } from '@/lib/api'
@@ -23,7 +31,13 @@ function CartRow({ item }: { item: CartItemDTO }) {
         <div className="flex items-center gap-4">
           <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-white/5 shrink-0">
             {img ? (
-              <Image src={img.url} alt={img.alt || product.title} fill className="object-cover" sizes="80px" />
+              <Image
+                src={img.url}
+                alt={img.alt || product.title}
+                fill
+                className="object-cover"
+                sizes="80px"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-[var(--muted)]">
                 <ShoppingCart size={20} aria-hidden="true" />
@@ -138,7 +152,12 @@ export default function CartPage() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10">
       <h1 className="font-display font-semibold text-2xl mb-8">
-        Your cart{!isEmpty && <span className="text-[var(--muted)] font-normal text-lg ml-2">({cart.items.length} item{cart.items.length !== 1 ? 's' : ''})</span>}
+        Your cart
+        {!isEmpty && (
+          <span className="text-[var(--muted)] font-normal text-lg ml-2">
+            ({cart.items.length} item{cart.items.length !== 1 ? 's' : ''})
+          </span>
+        )}
       </h1>
 
       {isEmpty ? (
@@ -159,10 +178,18 @@ export default function CartPage() {
             <table className="w-full" aria-label="Cart items">
               <thead>
                 <tr className="border-b border-[var(--border)]">
-                  <th className="text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-widest pb-3">Product</th>
-                  <th className="text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-widest pb-3 hidden sm:table-cell">Price</th>
-                  <th className="text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-widest pb-3">Qty</th>
-                  <th className="text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-widest pb-3 hidden sm:table-cell">Total</th>
+                  <th className="text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-widest pb-3">
+                    Product
+                  </th>
+                  <th className="text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-widest pb-3 hidden sm:table-cell">
+                    Price
+                  </th>
+                  <th className="text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-widest pb-3">
+                    Qty
+                  </th>
+                  <th className="text-left text-xs font-semibold text-[var(--muted)] uppercase tracking-widest pb-3 hidden sm:table-cell">
+                    Total
+                  </th>
                   <th className="pb-3" />
                 </tr>
               </thead>
@@ -231,7 +258,9 @@ export default function CartPage() {
                       onKeyDown={(e) => e.key === 'Enter' && handleApplyCoupon()}
                       className={cn(
                         'flex-1 glass rounded-xl px-3 py-2 text-sm border outline-none',
-                        couponError ? 'border-danger/50' : 'border-[var(--border)] focus:border-violet/50',
+                        couponError
+                          ? 'border-danger/50'
+                          : 'border-[var(--border)] focus:border-violet/50',
                         'transition-colors'
                       )}
                       aria-label="Coupon code"
@@ -246,15 +275,14 @@ export default function CartPage() {
                     </button>
                   </div>
                   {couponError && (
-                    <p className="text-xs text-danger" role="alert">{couponError}</p>
+                    <p className="text-xs text-danger" role="alert">
+                      {couponError}
+                    </p>
                   )}
                 </div>
               )}
 
-              <Link
-                href="/checkout"
-                className="btn-primary w-full justify-center py-3 text-center"
-              >
+              <Link href="/checkout" className="btn-primary w-full justify-center py-3 text-center">
                 Proceed to checkout
               </Link>
               <Link

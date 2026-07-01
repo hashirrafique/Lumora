@@ -24,6 +24,7 @@ import {
 import { Logo } from '@/components/ui/Logo'
 import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { CommandPalette } from '@/components/ui/CommandPalette'
+import { SearchDropdown } from '@/components/layout/SearchDropdown'
 import { useCommandPalette } from '@/lib/hooks/useCommandPalette'
 import { useCartStore } from '@/store/cart.store'
 import { useCart } from '@/lib/hooks/useCart'
@@ -361,23 +362,10 @@ export function Navbar() {
 
           {/* Right — actions */}
           <div className="flex items-center gap-1">
-            {/* Desktop search */}
-            <button
-              onClick={() => setCmdOpen(true)}
-              aria-label="Search products (⌘K)"
-              className={cn(
-                'hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl',
-                'text-sm text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/5',
-                'border border-[var(--border)] transition-colors duration-150',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet'
-              )}
-            >
-              <Search size={14} aria-hidden="true" />
-              <span>Search</span>
-              <kbd className="hidden lg:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-white/5 text-xs font-mono">
-                ⌘K
-              </kbd>
-            </button>
+            {/* Desktop search dropdown */}
+            <div className="hidden sm:block w-52 lg:w-64">
+              <SearchDropdown />
+            </div>
 
             {/* Mobile search toggle */}
             <button
@@ -418,6 +406,7 @@ export function Navbar() {
             <button
               type="button"
               onClick={openDrawer}
+              data-cart-icon="true"
               aria-label={`Cart — ${itemCount} item${itemCount !== 1 ? 's' : ''}`}
               className="relative w-9 h-9 rounded-xl flex items-center justify-center text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet"
             >

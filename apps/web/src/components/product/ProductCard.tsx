@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion'
 import { Heart, ShoppingCart, Check, Eye, GitCompare } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { spring } from '@/lib/motion'
+import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
 import { RatingStars } from '@/components/ui/RatingStars'
 import { Price } from '@/components/ui/Price'
 import { Badge } from '@/components/ui/Badge'
@@ -18,6 +20,9 @@ import type { ProductDTO } from '@/lib/api'
 const BLUR_PLACEHOLDER =
   'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiM3QzVDRkYiLz48L3N2Zz4='
 
+// Pre-computed burst angles so particles radiate in 6 evenly spaced directions
+const BURST_ANGLES = [0, 60, 120, 180, 240, 300]
+
 interface ProductCardProps {
   product: ProductDTO
   className?: string
@@ -25,8 +30,17 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, className, onQuickView }: ProductCardProps) {
+  const reduced = useReducedMotion()
+  const canHover = typeof window !== 'undefined' && window.matchMedia('(hover: hover)').matches
+
   const [imgError, setImgError] = useState(false)
   const [added, setAdded] = useState(false)
+  const [justWishlisted, setJustWishlisted] = useState(false)
+  const [spotlight, setSpotlight] = useState({ x: 50, y: 50 })
+
+  const cardRef = useRef<HTMLDivElement>(null)
+  const addBtnRef = useRef<HTMLButtonElement>(null)
+
   const addToCart = useAddToCart()
   const toggleWishlist = useToggleWishlist()
   const { data: wishlist } = useWishlist()
@@ -35,31 +49,69 @@ export function ProductCard({ product, className, onQuickView }: ProductCardProp
   const inCompare = isInCompare(product._id)
   const compareListFull = compareList.length >= 3 && !inCompare
 
+  // 3D tilt motion values
+  const mx = useMotionValue(0)
+  const my = useMotionValue(0)
+  const rotateX = useTransform(my, [-0.5, 0.5], reduced || !canHover ? [0, 0] : [6, -6])
+  const rotateY = useTransform(mx, [-0.5, 0.5], reduced || !canHover ? [0, 0] : [-6, 6])
+
   const isWishlisted = wishlist?.products.some((p) => p._id === product._id) ?? false
   const mainImage = product.images[0]
   const isOutOfStock = product.stock === 0
   const isLowStock = product.stock > 0 && product.stock <= 5
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (reduced || !canHover) return
+      const rect = e.currentTarget.getBoundingClientRect()
+      mx.set((e.clientX - rect.left) / rect.width - 0.5)
+      my.set((e.clientY - rect.top) / rect.height - 0.5)
+      setSpotlight({
+        x: ((e.clientX - rect.left) / rect.width) * 100,
+        y: ((e.clientY - rect.top) / rect.height) * 100,
+      })
+    },
+    [reduced, canHover, mx, my]
+  )
+
+  const handleMouseLeave = useCallback(() => {
+    mx.set(0)
+    my.set(0)
+  }, [mx, my])
 
   const handleAddToCart = useCallback(
     async (e: React.MouseEvent) => {
       e.preventDefault()
       e.stopPropagation()
       if (isOutOfStock || added) return
+      const btnRect = addBtnRef.current?.getBoundingClientRect()
       await addToCart.mutateAsync({ productId: product._id, qty: 1 })
       setAdded(true)
       openDrawer()
+      if (btnRect && mainImage?.url) {
+        window.dispatchEvent(
+          new CustomEvent('lumora:cart-fly', {
+            detail: { srcX: btnRect.left, srcY: btnRect.top, productImage: mainImage.url },
+          })
+        )
+      }
       setTimeout(() => setAdded(false), 1800)
     },
-    [isOutOfStock, added, addToCart, product._id, openDrawer]
+    [isOutOfStock, added, addToCart, product._id, openDrawer, mainImage]
   )
 
   const handleWishlist = useCallback(
     async (e: React.MouseEvent) => {
       e.preventDefault()
       e.stopPropagation()
+      const wasWishlisted = isWishlisted
       await toggleWishlist.mutateAsync(product._id)
+      if (!wasWishlisted) {
+        setJustWishlisted(true)
+        setTimeout(() => setJustWishlisted(false), 700)
+      }
     },
-    [toggleWishlist, product._id]
+    [toggleWishlist, product._id, isWishlisted]
   )
 
   const handleQuickView = useCallback(
@@ -82,7 +134,15 @@ export function ProductCard({ product, className, onQuickView }: ProductCardProp
   )
 
   return (
-    <motion.div whileHover={{ y: -4, scale: 1.01 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
+    <motion.div
+      ref={cardRef}
+      style={{ rotateX, rotateY, transformPerspective: 900 }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      whileHover={reduced ? {} : { y: -4, scale: 1.01 }}
+      transition={spring.snappy}
+      className="relative"
+    >
       <Link
         href={`/product/${product.slug}`}
         className={cn(
@@ -95,6 +155,18 @@ export function ProductCard({ product, className, onQuickView }: ProductCardProp
         )}
         aria-label={`View ${product.title}`}
       >
+        {/* Spotlight overlay */}
+        {canHover && !reduced && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-3xl z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+            style={{
+              background: `radial-gradient(120px circle at ${spotlight.x}% ${spotlight.y}%, rgba(124,92,255,0.12), transparent)`,
+              mixBlendMode: 'overlay',
+            }}
+          />
+        )}
+
         {/* Image */}
         <div className="relative aspect-square overflow-hidden bg-white/5">
           {mainImage && !imgError ? (
@@ -132,35 +204,67 @@ export function ProductCard({ product, className, onQuickView }: ProductCardProp
 
           {/* Top-right actions */}
           <div className="absolute top-3 right-3 flex flex-col gap-1.5">
-            {/* Wishlist */}
-            <motion.button
-              type="button"
-              onClick={handleWishlist}
-              disabled={toggleWishlist.isPending}
-              className={cn(
-                'p-2 rounded-xl glass touch-always-visible',
-                'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
-                'hover:bg-white/10 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet',
-                'disabled:cursor-not-allowed'
-              )}
-              aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
-              aria-pressed={isWishlisted}
-              whileTap={{ scale: 0.85 }}
-            >
-              <motion.div
-                animate={isWishlisted ? { scale: [1, 1.4, 1] } : { scale: 1 }}
-                transition={{ duration: 0.3 }}
+            {/* Wishlist + burst */}
+            <div className="relative">
+              <motion.button
+                type="button"
+                onClick={handleWishlist}
+                disabled={toggleWishlist.isPending}
+                className={cn(
+                  'p-2 rounded-xl glass touch-always-visible',
+                  'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
+                  'hover:bg-white/10 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet',
+                  'disabled:cursor-not-allowed'
+                )}
+                aria-label={isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+                aria-pressed={isWishlisted}
+                whileTap={{ scale: 0.85 }}
               >
-                <Heart
-                  size={16}
-                  className={cn(
-                    'transition-colors duration-150',
-                    isWishlisted ? 'fill-danger text-danger' : 'text-[var(--muted)]'
-                  )}
-                  aria-hidden="true"
-                />
-              </motion.div>
-            </motion.button>
+                <motion.div
+                  animate={
+                    justWishlisted && !reduced
+                      ? { scale: [1, 0, 1.5, 1], rotate: [0, 0, -12, 0] }
+                      : { scale: 1 }
+                  }
+                  transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <Heart
+                    size={16}
+                    className={cn(
+                      'transition-colors duration-150',
+                      isWishlisted ? 'fill-danger text-danger' : 'text-[var(--muted)]'
+                    )}
+                    aria-hidden="true"
+                  />
+                </motion.div>
+              </motion.button>
+
+              {/* Burst particles */}
+              <AnimatePresence>
+                {justWishlisted && !reduced && (
+                  <>
+                    {BURST_ANGLES.map((angle) => (
+                      <motion.div
+                        key={angle}
+                        initial={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+                        animate={{
+                          opacity: 0,
+                          x: Math.cos((angle * Math.PI) / 180) * 22,
+                          y: Math.sin((angle * Math.PI) / 180) * 22,
+                          scale: 0.4,
+                        }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                        className="pointer-events-none absolute inset-0 flex items-center justify-center"
+                        aria-hidden="true"
+                      >
+                        <Heart size={8} className="fill-danger text-danger" />
+                      </motion.div>
+                    ))}
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
 
             {/* Quick view */}
             {onQuickView && (
@@ -237,6 +341,7 @@ export function ProductCard({ product, className, onQuickView }: ProductCardProp
             <Price price={product.price} compareAtPrice={product.compareAtPrice} size="sm" />
 
             <motion.button
+              ref={addBtnRef}
               type="button"
               onClick={handleAddToCart}
               disabled={isOutOfStock || addToCart.isPending}
@@ -258,7 +363,7 @@ export function ProductCard({ product, className, onQuickView }: ProductCardProp
                     initial={{ scale: 0, rotate: -30 }}
                     animate={{ scale: 1, rotate: 0 }}
                     exit={{ scale: 0 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                    transition={spring.bouncy}
                   >
                     <Check size={14} aria-hidden="true" />
                   </motion.span>
@@ -268,7 +373,7 @@ export function ProductCard({ product, className, onQuickView }: ProductCardProp
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+                    transition={spring.bouncy}
                   >
                     <ShoppingCart size={14} aria-hidden="true" />
                   </motion.span>

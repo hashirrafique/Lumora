@@ -1,18 +1,28 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShoppingCart, Trash2, Truck } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ShoppingCart, Trash2, Truck, Heart, Gift, ChevronDown, ShoppingBag } from 'lucide-react'
 import { Drawer } from '@/components/ui/Drawer'
 import { QtyStepper } from '@/components/ui/QtyStepper'
 import { Price } from '@/components/ui/Price'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useCartStore } from '@/store/cart.store'
 import { useCart, useUpdateCartItem, useRemoveCartItem } from '@/lib/hooks/useCart'
+import { useToggleWishlist } from '@/lib/hooks/useWishlist'
+import { useProducts } from '@/lib/hooks/useProducts'
+import { useAddToCart } from '@/lib/hooks/useCart'
+import { useToast } from '@/components/ui/Toast'
+import { spring } from '@/lib/motion'
 import type { CartItemDTO } from '@/lib/api'
 import { cn } from '@/lib/utils'
 
 const FREE_SHIPPING_THRESHOLD = 75
+
+const BLUR_PLACEHOLDER =
+  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiM3QzVDRkYiLz48L3N2Zz4='
 
 function ShippingProgress({ subtotal }: { subtotal: number }) {
   const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal)
@@ -52,12 +62,31 @@ function ShippingProgress({ subtotal }: { subtotal: number }) {
 function CartItem({ item }: { item: CartItemDTO }) {
   const updateItem = useUpdateCartItem()
   const removeItem = useRemoveCartItem()
+  const toggleWishlist = useToggleWishlist()
+  const toast = useToast()
 
   const product = item.product
   const img = product.images[0]
 
+  const handleSaveForLater = async () => {
+    await toggleWishlist.mutateAsync(product._id)
+    removeItem.mutate({
+      productId: product._id,
+      variantName: item.variant?.name,
+      variantValue: item.variant?.value,
+    })
+    toast.success('Saved to wishlist ♡')
+  }
+
   return (
-    <div className="flex gap-3 py-4 border-b border-[var(--border)] last:border-0">
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, x: -20, height: 0, marginBottom: 0, paddingBottom: 0 }}
+      transition={spring.gentle}
+      className="flex gap-3 py-4 border-b border-[var(--border)] last:border-0"
+    >
       {/* Image */}
       <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-white/5 shrink-0">
         {img ? (
@@ -122,6 +151,133 @@ function CartItem({ item }: { item: CartItemDTO }) {
           />
           <Price price={product.price * item.qty} size="sm" />
         </div>
+
+        {/* Save for later */}
+        <button
+          type="button"
+          onClick={() => void handleSaveForLater()}
+          disabled={toggleWishlist.isPending}
+          className="flex items-center gap-1 text-xs text-[var(--muted)] hover:text-violet transition-colors w-fit focus-visible:outline-none focus-visible:underline disabled:opacity-50"
+        >
+          <Heart size={11} aria-hidden="true" />
+          Save for later
+        </button>
+      </div>
+    </motion.div>
+  )
+}
+
+function GiftWrapSection() {
+  const [open, setOpen] = useState(false)
+  const [checked, setChecked] = useState(false)
+  const [message, setMessage] = useState('')
+
+  return (
+    <div className="border-t border-[var(--border)]">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2 px-6 py-3 text-left hover:bg-white/5 transition-colors"
+        aria-expanded={open}
+      >
+        <Gift size={14} className="text-violet shrink-0" aria-hidden="true" />
+        <span className="flex-1 text-sm text-[var(--muted)]">Add gift wrap or message</span>
+        <ChevronDown
+          size={13}
+          className={cn(
+            'text-[var(--muted)] transition-transform duration-200',
+            open && 'rotate-180'
+          )}
+          aria-hidden="true"
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={spring.gentle}
+            className="overflow-hidden"
+          >
+            <div className="px-6 pb-4 space-y-3">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(e) => setChecked(e.target.checked)}
+                  className="w-4 h-4 rounded accent-violet"
+                />
+                <span className="text-sm text-[var(--text)]">
+                  Add gift wrap <span className="text-[var(--muted)]">($4.99)</span>
+                </span>
+              </label>
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Write a gift message (optional)…"
+                rows={2}
+                className="w-full glass rounded-xl px-3 py-2 text-sm text-[var(--text)] placeholder:text-[var(--muted)] border border-[var(--border)] focus:border-violet/50 outline-none resize-none"
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
+function CrossSellRow({ closeDrawer }: { closeDrawer: () => void }) {
+  const { data } = useProducts({ featured: true, limit: 4 })
+  const addToCart = useAddToCart()
+  const openDrawer = useCartStore((s) => s.openDrawer)
+  const products = data?.products ?? []
+
+  if (products.length === 0) return null
+
+  return (
+    <div className="border-t border-[var(--border)] px-6 py-4">
+      <p className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+        <ShoppingBag size={11} aria-hidden="true" />
+        Complete your setup
+      </p>
+      <div className="flex gap-3 overflow-x-auto pb-1 snap-x snap-mandatory scrollbar-none">
+        {products.map((p) => {
+          const img = p.images[0]
+          return (
+            <div key={p._id} className="flex flex-col gap-2 shrink-0 w-24 snap-start">
+              <Link
+                href={`/product/${p.slug}`}
+                onClick={closeDrawer}
+                className="relative w-24 h-24 rounded-xl overflow-hidden bg-white/5 block"
+              >
+                {img && (
+                  <Image
+                    src={img.url}
+                    alt={p.title}
+                    fill
+                    sizes="96px"
+                    className="object-cover"
+                    placeholder="blur"
+                    blurDataURL={BLUR_PLACEHOLDER}
+                  />
+                )}
+              </Link>
+              <p className="text-[10px] text-[var(--text)] line-clamp-2 leading-tight">{p.title}</p>
+              <button
+                type="button"
+                onClick={async () => {
+                  await addToCart.mutateAsync({ productId: p._id, qty: 1 })
+                  openDrawer()
+                }}
+                disabled={addToCart.isPending || p.stock === 0}
+                className="text-[10px] px-2 py-1 rounded-lg glass border border-violet/30 text-violet hover:bg-violet/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {p.stock === 0 ? 'OOS' : '+ Add'}
+              </button>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -170,18 +326,23 @@ export function CartDrawer() {
               }
             />
           ) : (
-            <div>
+            <AnimatePresence>
               {cart.items.map((item) => (
                 <CartItem key={`${item.product._id}-${item.variant?.value ?? ''}`} item={item} />
               ))}
-            </div>
+            </AnimatePresence>
           )}
         </div>
+
+        {/* Cross-sell row */}
+        {!isEmpty && <CrossSellRow closeDrawer={closeDrawer} />}
+
+        {/* Gift wrap */}
+        {!isEmpty && <GiftWrapSection />}
 
         {/* Footer totals */}
         {!isEmpty && cart && (
           <div className="px-6 py-4 border-t border-[var(--border)] space-y-3">
-            {/* Totals */}
             <div className="space-y-1.5 text-sm">
               <div className="flex justify-between text-[var(--muted)]">
                 <span>Subtotal</span>

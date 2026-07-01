@@ -11,6 +11,23 @@
   --border-strong: rgba(255, 255, 255, 0.14);
   --text: #f5f6ff;
   --muted: #a0a3bd;
+  /* accent system — overridden by data-accent */
+  --accent: #7c5cff;
+  --accent-2: #22d3ee;
+}
+
+/* ── Accent overrides ─────────────────────────────────────────────────────── */
+[data-accent='blue'] {
+  --accent: #3b82f6;
+  --accent-2: #06b6d4;
+}
+[data-accent='green'] {
+  --accent: #10b981;
+  --accent-2: #6ee7b7;
+}
+[data-accent='orange'] {
+  --accent: #f97316;
+  --accent-2: #fbbf24;
 }
 
 [data-theme='light'] {

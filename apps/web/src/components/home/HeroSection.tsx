@@ -1,10 +1,13 @@
 'use client'
 
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion } from 'framer-motion'
+import { motion, useScroll, useTransform } from 'framer-motion'
 import { ArrowRight, Sparkles, ChevronDown, Star, Package, Truck } from 'lucide-react'
 import { useProducts } from '@/lib/hooks/useProducts'
+import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
+import { ease, duration as dur } from '@/lib/motion'
 
 const BLUR_PLACEHOLDER =
   'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiM3QzVDRkYiLz48L3N2Zz4='
@@ -22,30 +25,70 @@ const floatVariants = [
 ]
 
 export function HeroSection() {
+  const reduced = useReducedMotion()
   const { data } = useProducts({ featured: true, limit: 3 })
   const featuredProducts = data?.products ?? []
+
+  // Cursor spotlight state
+  const [cursor, setCursor] = useState({ x: -999, y: -999 })
+  const [hasPointer, setHasPointer] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const fine = window.matchMedia('(pointer: fine)')
+    setHasPointer(fine.matches)
+    const handler = (e: MediaQueryListEvent) => setHasPointer(e.matches)
+    fine.addEventListener('change', handler)
+    return () => fine.removeEventListener('change', handler)
+  }, [])
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLElement>) => {
+      if (!hasPointer || reduced) return
+      setCursor({ x: e.clientX, y: e.clientY })
+    },
+    [hasPointer, reduced]
+  )
+
+  // Parallax via scroll
+  const { scrollY } = useScroll()
+  const headlineY = useTransform(scrollY, [0, 400], reduced ? [0, 0] : [0, -50])
+  const cardsY = useTransform(scrollY, [0, 400], reduced ? [0, 0] : [0, 28])
 
   return (
     <section
       className="relative min-h-[92vh] flex flex-col items-center justify-center overflow-hidden"
       aria-label="Hero"
+      onMouseMove={handleMouseMove}
     >
       <div className="aurora-mesh" aria-hidden="true" />
+
+      {/* Cursor spotlight — pointer:fine only */}
+      {hasPointer && !reduced && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none fixed inset-0 z-0 transition-none"
+          style={{
+            background: `radial-gradient(320px circle at ${cursor.x}px ${cursor.y}px, rgba(124,92,255,0.07), transparent 70%)`,
+          }}
+        />
+      )}
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center py-20">
           {/* ── Left column: text ──────────────────────────────────────────── */}
           <motion.div
+            style={{ y: headlineY }}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: dur.slow, ease: ease.out }}
             className="text-center lg:text-left"
           >
             {/* Badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1, duration: 0.4 }}
+              transition={{ delay: 0.1, duration: dur.base }}
               className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-sm text-[var(--muted)] border-aurora mb-6"
             >
               <span className="relative flex h-2 w-2" aria-hidden="true">
@@ -97,7 +140,8 @@ export function HeroSection() {
           </motion.div>
 
           {/* ── Right column: floating product cards ───────────────────────── */}
-          <div
+          <motion.div
+            style={{ y: cardsY }}
             className="relative hidden lg:flex items-center justify-center h-[520px]"
             aria-hidden="true"
           >
@@ -148,7 +192,7 @@ export function HeroSection() {
               )
             })}
 
-            {/* If no products yet, show placeholder boxes */}
+            {/* Placeholder skeleton cards when no products yet */}
             {featuredProducts.length === 0 &&
               floatVariants.map((pos, i) => (
                 <div
@@ -163,7 +207,7 @@ export function HeroSection() {
                   </div>
                 </div>
               ))}
-          </div>
+          </motion.div>
         </div>
       </div>
 
@@ -172,7 +216,7 @@ export function HeroSection() {
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 text-[var(--muted)]"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.2, duration: 0.5 }}
+        transition={{ delay: 1.2, duration: dur.slow }}
         aria-hidden="true"
       >
         <span className="text-xs">Scroll</span>

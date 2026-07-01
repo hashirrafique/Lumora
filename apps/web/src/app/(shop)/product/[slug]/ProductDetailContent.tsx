@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
+import { motion, AnimatePresence, useInView } from 'framer-motion'
 import {
   Heart,
   ShoppingCart,
@@ -13,12 +14,19 @@ import {
   Share2,
   Copy,
   Check as CheckIcon,
+  ChevronDown,
+  Truck,
+  RotateCcw,
+  Shield,
+  ThumbsUp,
+  ShoppingBag,
 } from 'lucide-react'
 import { useProduct, useProductReviews, useProducts } from '@/lib/hooks/useProducts'
 import { useAddToCart } from '@/lib/hooks/useCart'
 import { useToggleWishlist, useWishlist } from '@/lib/hooks/useWishlist'
 import { useCartStore } from '@/store/cart.store'
 import { useStockSocket } from '@/lib/hooks/useStockSocket'
+import { spring } from '@/lib/motion'
 import { Price } from '@/components/ui/Price'
 import { RatingStars } from '@/components/ui/RatingStars'
 import { StockBadge } from '@/components/ui/StockBadge'
@@ -30,6 +38,99 @@ import { RecentlyViewed } from '@/components/ui/RecentlyViewed'
 import { addRecentlyViewed } from '@/lib/recentlyViewed'
 import { useToast } from '@/components/ui/Toast'
 import { cn } from '@/lib/utils'
+import type { ReviewDTO } from '@/lib/api'
+
+const SHIPPING_INFO = [
+  {
+    icon: Truck,
+    title: 'Free shipping on orders over $75',
+    body: 'Standard delivery in 5–7 business days. Express and overnight options available at checkout.',
+  },
+  {
+    icon: RotateCcw,
+    title: '30-day hassle-free returns',
+    body: 'Not satisfied? Return within 30 days for a full refund. Free return label included.',
+  },
+  {
+    icon: Shield,
+    title: '2-year warranty included',
+    body: 'All products come with a 2-year manufacturer warranty against defects.',
+  },
+]
+
+function ShippingAccordion() {
+  const [open, setOpen] = useState<number | null>(null)
+  return (
+    <div className="space-y-2">
+      {SHIPPING_INFO.map((item, idx) => (
+        <div key={idx} className="glass rounded-xl border border-[var(--border)] overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setOpen(open === idx ? null : idx)}
+            className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-white/5 transition-colors"
+            aria-expanded={open === idx}
+          >
+            <item.icon size={15} className="text-violet shrink-0" aria-hidden="true" />
+            <span className="flex-1 text-sm font-medium text-[var(--text)]">{item.title}</span>
+            <ChevronDown
+              size={14}
+              className={cn(
+                'text-[var(--muted)] transition-transform duration-200',
+                open === idx && 'rotate-180'
+              )}
+              aria-hidden="true"
+            />
+          </button>
+          <AnimatePresence initial={false}>
+            {open === idx && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={spring.gentle}
+                className="overflow-hidden"
+              >
+                <p className="px-4 pb-3 pt-0 text-sm text-[var(--muted)] leading-relaxed">
+                  {item.body}
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+type ReviewSort = 'newest' | 'rating' | 'helpful'
+
+function ReviewBreakdownBars({ reviews }: { reviews: ReviewDTO[] }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const inView = useInView(ref, { once: true })
+  const total = reviews.length
+  return (
+    <div ref={ref} className="space-y-1.5 mb-6">
+      {[5, 4, 3, 2, 1].map((star) => {
+        const count = reviews.filter((r) => r.rating === star).length
+        const pct = total > 0 ? (count / total) * 100 : 0
+        return (
+          <div key={star} className="flex items-center gap-2">
+            <span className="text-xs text-[var(--muted)] w-4 shrink-0">{star}★</span>
+            <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
+              <motion.div
+                className="h-full rounded-full bg-gradient-to-r from-violet to-cyan"
+                initial={{ width: 0 }}
+                animate={{ width: inView ? `${pct}%` : '0%' }}
+                transition={{ duration: 0.8, delay: (5 - star) * 0.06, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </div>
+            <span className="text-xs text-[var(--muted)] w-7 shrink-0 text-right">{count}</span>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
 
 const BLUR_PLACEHOLDER =
   'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiM3QzVDRkYiLz48L3N2Zz4='
@@ -74,6 +175,10 @@ export default function ProductDetailPage() {
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
   const [stickyVisible, setStickyVisible] = useState(false)
   const [linkCopied, setLinkCopied] = useState(false)
+  const [reviewSort, setReviewSort] = useState<ReviewSort>('newest')
+  const [helpfulVotes, setHelpfulVotes] = useState<Record<string, boolean>>({})
+  const [zoomPos, setZoomPos] = useState<{ x: number; y: number } | null>(null)
+  const imgContainerRef = useRef<HTMLDivElement>(null)
   const addToCartRef = useRef<HTMLDivElement>(null)
 
   const categorySlug =
@@ -86,6 +191,40 @@ export default function ProductDetailPage() {
   useEffect(() => {
     if (product) addRecentlyViewed(product)
   }, [product])
+
+  // Load persisted helpful votes from localStorage
+  useEffect(() => {
+    if (!reviewsData) return
+    const votes: Record<string, boolean> = {}
+    reviewsData.reviews.forEach((r) => {
+      try {
+        if (localStorage.getItem(`lumora-helpful-${r._id}`)) votes[r._id] = true
+      } catch {
+        /* ignore */
+      }
+    })
+    setHelpfulVotes(votes)
+  }, [reviewsData])
+
+  const handleHelpfulVote = useCallback((reviewId: string) => {
+    setHelpfulVotes((prev) => {
+      const next = { ...prev, [reviewId]: !prev[reviewId] }
+      try {
+        if (next[reviewId]) localStorage.setItem(`lumora-helpful-${reviewId}`, '1')
+        else localStorage.removeItem(`lumora-helpful-${reviewId}`)
+      } catch {
+        /* ignore */
+      }
+      return next
+    })
+  }, [])
+
+  const handleImageMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    setZoomPos({ x: (e.clientX - rect.left) / rect.width, y: (e.clientY - rect.top) / rect.height })
+  }, [])
+
+  const handleImageMouseLeave = useCallback(() => setZoomPos(null), [])
 
   useEffect(() => {
     const el = addToCartRef.current
@@ -175,7 +314,12 @@ export default function ProductDetailPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         {/* ── Image gallery ──────────────────────────────────────────────────── */}
         <div className="space-y-3">
-          <div className="relative aspect-square rounded-3xl overflow-hidden bg-white/5">
+          <div
+            ref={imgContainerRef}
+            className="relative aspect-square rounded-3xl overflow-hidden bg-white/5 cursor-crosshair"
+            onMouseMove={handleImageMouseMove}
+            onMouseLeave={handleImageMouseLeave}
+          >
             {mainImage ? (
               <Image
                 src={mainImage.url}
@@ -194,6 +338,21 @@ export default function ProductDetailPage() {
               <div className="absolute top-4 left-4">
                 <Badge variant="violet">Featured</Badge>
               </div>
+            )}
+
+            {/* Zoom lens overlay */}
+            {zoomPos && mainImage && (
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute w-28 h-28 rounded-full border-2 border-violet/50 overflow-hidden shadow-card"
+                style={{
+                  left: `calc(${zoomPos.x * 100}% - 56px)`,
+                  top: `calc(${zoomPos.y * 100}% - 56px)`,
+                  backgroundImage: `url(${mainImage.url})`,
+                  backgroundSize: '300%',
+                  backgroundPosition: `${zoomPos.x * 100}% ${zoomPos.y * 100}%`,
+                }}
+              />
             )}
           </div>
 
@@ -244,6 +403,9 @@ export default function ProductDetailPage() {
           <StockBadge stock={liveStock} />
 
           <p className="text-sm text-[var(--muted)] leading-relaxed">{product.description}</p>
+
+          {/* Shipping/returns accordion */}
+          <ShippingAccordion />
 
           {/* Variants */}
           {product.variants.map((variant) => (
@@ -412,19 +574,105 @@ export default function ProductDetailPage() {
         </div>
       )}
 
+      {/* ── Frequently bought together ──────────────────────────────────────── */}
+      {relatedProducts.length >= 2 && (
+        <section className="mt-16" aria-label="Frequently bought together">
+          <h2 className="font-display font-semibold text-xl mb-6 flex items-center gap-2">
+            <ShoppingBag size={20} className="text-violet" aria-hidden="true" />
+            Frequently bought together
+          </h2>
+          <div className="glass rounded-3xl border border-[var(--border)] p-6">
+            <div className="flex flex-wrap items-center gap-4 mb-5">
+              {[product, ...relatedProducts.slice(0, 2)].map((p, idx, arr) => (
+                <div key={p._id} className="flex items-center gap-3">
+                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden bg-white/5 shrink-0">
+                    {p.images[0] && (
+                      <Image
+                        src={p.images[0].url}
+                        alt={p.title}
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-[var(--text)] line-clamp-1 max-w-[120px]">
+                      {p.title}
+                    </p>
+                    <p className="text-xs text-violet font-semibold">${p.price.toFixed(2)}</p>
+                  </div>
+                  {idx < arr.length - 1 && (
+                    <span className="text-[var(--muted)] text-lg font-light">+</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <p className="text-sm text-[var(--muted)]">
+                Combined total:{' '}
+                <span className="font-semibold text-[var(--text)]">
+                  $
+                  {[product, ...relatedProducts.slice(0, 2)]
+                    .reduce((s, p) => s + p.price, 0)
+                    .toFixed(2)}
+                </span>
+              </p>
+              <button
+                type="button"
+                onClick={async () => {
+                  for (const p of [product, ...relatedProducts.slice(0, 2)]) {
+                    await addToCart.mutateAsync({ productId: p._id, qty: 1 })
+                  }
+                  openDrawer()
+                  toast.success('All 3 items added to cart!')
+                }}
+                disabled={addToCart.isPending}
+                className="btn-primary text-sm py-2.5 px-5 disabled:opacity-50"
+              >
+                <ShoppingBag size={15} aria-hidden="true" />
+                Add all to cart
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* ── Reviews ─────────────────────────────────────────────────────────── */}
       <section className="mt-16" aria-label="Customer reviews">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="font-display font-semibold text-xl">Customer reviews</h2>
-          {product.ratingCount > 0 && (
-            <div className="flex items-center gap-3">
-              <span className="text-3xl font-bold">{product.ratingAvg.toFixed(1)}</span>
-              <div>
-                <RatingStars rating={product.ratingAvg} showCount={false} size={16} />
-                <p className="text-xs text-[var(--muted)] mt-0.5">
-                  {product.ratingCount} review{product.ratingCount !== 1 ? 's' : ''}
-                </p>
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+          <div>
+            <h2 className="font-display font-semibold text-xl">Customer reviews</h2>
+            {product.ratingCount > 0 && (
+              <div className="flex items-center gap-3 mt-1">
+                <span className="text-3xl font-bold">{product.ratingAvg.toFixed(1)}</span>
+                <div>
+                  <RatingStars rating={product.ratingAvg} showCount={false} size={16} />
+                  <p className="text-xs text-[var(--muted)] mt-0.5">
+                    {product.ratingCount} review{product.ratingCount !== 1 ? 's' : ''}
+                  </p>
+                </div>
               </div>
+            )}
+          </div>
+          {/* Sort controls */}
+          {reviewsData && reviewsData.reviews.length > 1 && (
+            <div className="flex items-center gap-1 glass rounded-xl p-1 border border-[var(--border)]">
+              {(['newest', 'rating', 'helpful'] as ReviewSort[]).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setReviewSort(s)}
+                  className={cn(
+                    'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors capitalize',
+                    reviewSort === s
+                      ? 'bg-violet/20 text-violet'
+                      : 'text-[var(--muted)] hover:text-[var(--text)]'
+                  )}
+                >
+                  {s === 'newest' ? 'Newest' : s === 'rating' ? 'Top rated' : 'Helpful'}
+                </button>
+              ))}
             </div>
           )}
         </div>
@@ -436,45 +684,59 @@ export default function ProductDetailPage() {
             description="Be the first to review this product."
           />
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {reviewsData.reviews.map((review) => {
-              const r = review as {
-                _id: string
-                user: { name: string }
-                rating: number
-                title?: string
-                body: string
-                isVerifiedPurchase: boolean
-                createdAt: string
-              }
-              return (
-                <article key={r._id} className="glass rounded-2xl p-5 space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-sm font-medium">{r.user.name}</p>
-                      <RatingStars rating={r.rating} showCount={false} size={13} />
+          <>
+            {/* Star breakdown bars */}
+            <ReviewBreakdownBars reviews={reviewsData.reviews} />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[...reviewsData.reviews]
+                .sort((a, b) => {
+                  if (reviewSort === 'rating') return b.rating - a.rating
+                  if (reviewSort === 'helpful')
+                    return (helpfulVotes[b._id] ? 1 : 0) - (helpfulVotes[a._id] ? 1 : 0)
+                  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                })
+                .map((r) => (
+                  <article key={r._id} className="glass rounded-2xl p-5 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium">{r.user.name}</p>
+                        <RatingStars rating={r.rating} showCount={false} size={13} />
+                      </div>
+                      <div className="flex flex-col items-end gap-1">
+                        <time className="text-xs text-[var(--muted)]">
+                          {new Date(r.createdAt).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </time>
+                        {r.isVerifiedPurchase && (
+                          <Badge variant="success" className="text-[10px]">
+                            ✓ Verified
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <time className="text-xs text-[var(--muted)]">
-                        {new Date(r.createdAt).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                        })}
-                      </time>
-                      {r.isVerifiedPurchase && (
-                        <Badge variant="success" className="text-[10px]">
-                          Verified
-                        </Badge>
+                    {r.title && <p className="font-medium text-sm">{r.title}</p>}
+                    <p className="text-sm text-[var(--muted)] leading-relaxed">{r.body}</p>
+                    <button
+                      type="button"
+                      onClick={() => handleHelpfulVote(r._id)}
+                      className={cn(
+                        'flex items-center gap-1.5 text-xs transition-colors mt-1 focus-visible:outline-none focus-visible:underline',
+                        helpfulVotes[r._id]
+                          ? 'text-violet'
+                          : 'text-[var(--muted)] hover:text-[var(--text)]'
                       )}
-                    </div>
-                  </div>
-                  {r.title && <p className="font-medium text-sm">{r.title}</p>}
-                  <p className="text-sm text-[var(--muted)] leading-relaxed">{r.body}</p>
-                </article>
-              )
-            })}
-          </div>
+                    >
+                      <ThumbsUp size={12} aria-hidden="true" />
+                      {helpfulVotes[r._id] ? 'Helpful!' : 'Helpful?'}
+                    </button>
+                  </article>
+                ))}
+            </div>
+          </>
         )}
 
         {reviewsData && reviewsData.meta.totalPages > 1 && (

@@ -31,6 +31,10 @@ const securityHeaders = [
 const nextConfig = {
   // standalone is for Docker; Vercel uses its own output format
   output: process.env.VERCEL ? undefined : 'standalone',
+  experimental: {
+    // Increase timeout to handle cold Vercel API starts during local builds
+    staticPageGenerationTimeout: 120,
+  },
   transpilePackages: ['@lumora/types'],
   images: {
     remotePatterns: [

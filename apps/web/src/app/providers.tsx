@@ -18,10 +18,18 @@ function ApiWakeUp() {
     timer = setTimeout(() => setWaking(true), 1500)
 
     fetch(`${API_BASE}/health`, { signal: controller.signal })
-      .then(() => { clearTimeout(timer); setWaking(false) })
-      .catch(() => { setWaking(false) })
+      .then(() => {
+        clearTimeout(timer)
+        setWaking(false)
+      })
+      .catch(() => {
+        setWaking(false)
+      })
 
-    return () => { clearTimeout(timer); controller.abort() }
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
   }, [])
 
   if (!waking) return null
@@ -40,8 +48,11 @@ function ApiWakeUp() {
 function AuthBootstrap() {
   const setUser = useAuthStore((s) => s.setUser)
   useEffect(() => {
-    authApi.me().then(setUser).catch(() => setUser(null))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    authApi
+      .me()
+      .then(setUser)
+      .catch(() => setUser(null))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   return null
 }
@@ -50,8 +61,21 @@ function SocketBootstrap() {
   const user = useAuthStore((s) => s.user)
   useEffect(() => {
     connectSocket()
-    return () => { disconnectSocket() }
+    return () => {
+      disconnectSocket()
+    }
   }, [user])
+  return null
+}
+
+function SwBootstrap() {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {
+        /* SW not critical */
+      })
+    }
+  }, [])
   return null
 }
 
@@ -73,6 +97,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <ApiWakeUp />
       <AuthBootstrap />
       <SocketBootstrap />
+      <SwBootstrap />
       {children}
     </QueryClientProvider>
   )

@@ -1,5 +1,7 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
 import { Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Search } from 'lucide-react'
@@ -32,7 +34,9 @@ function SearchResults() {
       {/* Search bar */}
       <div className="max-w-2xl mx-auto">
         <form onSubmit={handleSearch} className="relative" role="search">
-          <label htmlFor="search-input" className="sr-only">Search products</label>
+          <label htmlFor="search-input" className="sr-only">
+            Search products
+          </label>
           <Search
             size={18}
             className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none"

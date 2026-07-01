@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShoppingCart, Trash2 } from 'lucide-react'
+import { ShoppingCart, Trash2, Truck } from 'lucide-react'
 import { Drawer } from '@/components/ui/Drawer'
 import { QtyStepper } from '@/components/ui/QtyStepper'
 import { Price } from '@/components/ui/Price'
@@ -11,6 +11,43 @@ import { useCartStore } from '@/store/cart.store'
 import { useCart, useUpdateCartItem, useRemoveCartItem } from '@/lib/hooks/useCart'
 import type { CartItemDTO } from '@/lib/api'
 import { cn } from '@/lib/utils'
+
+const FREE_SHIPPING_THRESHOLD = 75
+
+function ShippingProgress({ subtotal }: { subtotal: number }) {
+  const remaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal)
+  const pct = Math.min(100, (subtotal / FREE_SHIPPING_THRESHOLD) * 100)
+  const isFree = subtotal >= FREE_SHIPPING_THRESHOLD
+
+  return (
+    <div className="px-6 py-3 border-b border-[var(--border)]">
+      <div className="flex items-center gap-2 mb-2">
+        <Truck
+          size={14}
+          className={isFree ? 'text-success' : 'text-[var(--muted)]'}
+          aria-hidden="true"
+        />
+        {isFree ? (
+          <p className="text-xs font-medium text-success">You have free shipping!</p>
+        ) : (
+          <p className="text-xs text-[var(--muted)]">
+            Add <span className="font-semibold text-[var(--text)]">${remaining.toFixed(2)}</span>{' '}
+            more for free shipping
+          </p>
+        )}
+      </div>
+      <div
+        className="shipping-progress"
+        role="progressbar"
+        aria-valuenow={Math.round(pct)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className="shipping-progress-fill" style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  )
+}
 
 function CartItem({ item }: { item: CartItemDTO }) {
   const updateItem = useUpdateCartItem()
@@ -24,7 +61,13 @@ function CartItem({ item }: { item: CartItemDTO }) {
       {/* Image */}
       <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-white/5 shrink-0">
         {img ? (
-          <Image src={img.url} alt={img.alt || product.title} fill className="object-cover" sizes="80px" />
+          <Image
+            src={img.url}
+            alt={img.alt || product.title}
+            fill
+            className="object-cover"
+            sizes="80px"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-[var(--muted)]">
             <ShoppingCart size={20} aria-hidden="true" />
@@ -98,6 +141,9 @@ export function CartDrawer() {
       title={`Cart${itemCount > 0 ? ` (${itemCount})` : ''}`}
     >
       <div className="flex flex-col h-full">
+        {/* Shipping progress */}
+        {!isEmpty && cart && <ShippingProgress subtotal={cart.subtotal} />}
+
         {/* Items */}
         <div className="flex-1 overflow-y-auto px-6">
           {isLoading ? (
@@ -118,11 +164,7 @@ export function CartDrawer() {
               title="Your cart is empty"
               description="Add some products to get started"
               action={
-                <Link
-                  href="/shop"
-                  onClick={closeDrawer}
-                  className="btn-primary"
-                >
+                <Link href="/shop" onClick={closeDrawer} className="btn-primary text-sm py-2 px-4">
                   Browse shop
                 </Link>
               }
@@ -153,7 +195,13 @@ export function CartDrawer() {
               )}
               <div className="flex justify-between text-[var(--muted)]">
                 <span>Shipping</span>
-                <span>{cart.shipping === 0 ? 'Free' : `$${cart.shipping.toFixed(2)}`}</span>
+                <span>
+                  {cart.shipping === 0 ? (
+                    <span className="text-success">Free</span>
+                  ) : (
+                    `$${cart.shipping.toFixed(2)}`
+                  )}
+                </span>
               </div>
               <div className="flex justify-between font-semibold text-[var(--text)] pt-1.5 border-t border-[var(--border)]">
                 <span>Total</span>
@@ -172,7 +220,7 @@ export function CartDrawer() {
               <Link
                 href="/checkout"
                 onClick={closeDrawer}
-                className="btn-primary w-full text-center justify-center py-3"
+                className="btn-primary w-full text-center justify-center py-3 text-sm"
               >
                 Checkout
               </Link>

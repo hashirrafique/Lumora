@@ -1,14 +1,14 @@
 import Link from 'next/link'
 import { Logo } from '@/components/ui/Logo'
-import { Github, Twitter, Instagram } from 'lucide-react'
+import { Github, Twitter, Instagram, Shield, RefreshCcw, Headphones, Bot } from 'lucide-react'
 
 const shopLinks = [
   { label: 'All Products', href: '/shop' },
+  { label: 'Electronics', href: '/shop?category=electronics' },
   { label: 'Audio', href: '/shop?category=audio' },
   { label: 'Wearables', href: '/shop?category=wearables' },
-  { label: 'Computing', href: '/shop?category=computing' },
-  { label: 'Home Tech', href: '/shop?category=home-tech' },
-  { label: 'Lifestyle', href: '/shop?category=lifestyle' },
+  { label: 'Photography', href: '/shop?category=photography' },
+  { label: 'Gaming', href: '/shop?category=gaming' },
 ]
 
 const accountLinks = [
@@ -26,6 +26,13 @@ const legalLinks = [
   { label: 'Refund Policy', href: '/refunds' },
 ]
 
+const trustBadges = [
+  { icon: Shield, label: 'SSL Secure' },
+  { icon: RefreshCcw, label: 'Free Returns' },
+  { icon: Headphones, label: '24/7 Support' },
+  { icon: Bot, label: 'AI-Powered' },
+]
+
 export function Footer() {
   const year = new Date().getFullYear()
 
@@ -35,18 +42,37 @@ export function Footer() {
       role="contentinfo"
       aria-label="Site footer"
     >
+      {/* Trust badges strip */}
+      <div className="border-b border-[var(--border)] py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <ul
+            className="flex flex-wrap justify-center sm:justify-between gap-4 sm:gap-0"
+            role="list"
+          >
+            {trustBadges.map(({ icon: Icon, label }) => (
+              <li key={label} className="flex items-center gap-2 text-sm text-[var(--muted)]">
+                <span className="w-7 h-7 rounded-lg bg-violet/10 text-violet flex items-center justify-center shrink-0">
+                  <Icon size={14} aria-hidden="true" />
+                </span>
+                {label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
-          {/* Brand column */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-10">
+          {/* Brand column — full width on mobile */}
           <div className="col-span-2 md:col-span-1">
             <Logo size="md" />
             <p className="mt-4 text-sm text-[var(--muted)] leading-relaxed max-w-xs">
-              Premium tech & lifestyle store with an AI shopping concierge. Shop the future.
-              Beautifully.
+              Premium tech & lifestyle store powered by AI. Find the perfect gear with Lumi — your
+              personal shopping assistant.
             </p>
             <div className="flex items-center gap-3 mt-6">
               <a
-                href="https://github.com"
+                href="https://github.com/hashirrafique/Lumora"
                 aria-label="GitHub"
                 rel="noopener noreferrer"
                 target="_blank"
@@ -129,12 +155,30 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-12 pt-6 border-t border-[var(--border)] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-[var(--muted)]">
-            &copy; {year} LUMORA. All rights reserved.
-          </p>
-          <p className="text-xs text-[var(--muted)]">
-            Crafted with care &mdash; AI-powered commerce.
-          </p>
+          <p className="text-xs text-[var(--muted)]">&copy; {year} LUMORA. All rights reserved.</p>
+
+          {/* Payment method pills */}
+          <div className="flex items-center gap-2" aria-label="Accepted payment methods">
+            {['Visa', 'Mastercard', 'AMEX', 'PayPal'].map((method) => (
+              <span
+                key={method}
+                className="px-2 py-0.5 rounded border border-[var(--border)] text-[10px] font-medium text-[var(--muted)] bg-white/3"
+              >
+                {method}
+              </span>
+            ))}
+          </div>
+
+          <a
+            href="#top"
+            onClick={(e) => {
+              e.preventDefault()
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+            }}
+            className="text-xs text-[var(--muted)] hover:text-[var(--text)] transition-colors focus-visible:outline-none focus-visible:underline"
+          >
+            Back to top ↑
+          </a>
         </div>
       </div>
     </footer>

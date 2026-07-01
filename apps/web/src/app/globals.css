@@ -99,7 +99,9 @@ small {
   padding: 1px;
   border-radius: inherit;
   background: linear-gradient(92deg, #7c5cff, #22d3ee);
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
@@ -113,7 +115,8 @@ small {
   inset: -20%;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(40% 35% at 20% 20%, rgba(124, 92, 255, 0.22), transparent 60%),
+  background:
+    radial-gradient(40% 35% at 20% 20%, rgba(124, 92, 255, 0.22), transparent 60%),
     radial-gradient(35% 30% at 80% 30%, rgba(34, 211, 238, 0.16), transparent 60%),
     radial-gradient(40% 40% at 60% 80%, rgba(91, 124, 250, 0.16), transparent 60%);
   filter: blur(40px);
@@ -169,4 +172,176 @@ small {
 ::selection {
   background: rgba(124, 92, 255, 0.3);
   color: #f5f6ff;
+}
+
+/* ── Marquee ──────────────────────────────────────────────────────────────── */
+.marquee-track {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    black 8%,
+    black 92%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(to right, transparent 0%, black 8%, black 92%, transparent 100%);
+}
+
+.marquee-content {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee 28s linear infinite;
+}
+
+.marquee-content-reverse {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee-reverse 28s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-content,
+  .marquee-content-reverse {
+    animation: none;
+  }
+}
+
+/* ── Light-theme scrollbar ────────────────────────────────────────────────── */
+[data-theme='light'] ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+}
+[data-theme='light'] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.22);
+}
+
+/* ── Theme transition ─────────────────────────────────────────────────────── */
+body {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+/* ── Touch device: always show wishlist / quick-view buttons ──────────────── */
+@media (hover: none) {
+  .touch-always-visible {
+    opacity: 1 !important;
+  }
+}
+
+/* ── Snap scroll (horizontal carousels) ──────────────────────────────────── */
+.snap-scroll-x {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  scrollbar-width: none;
+}
+.snap-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+.snap-scroll-x > * {
+  scroll-snap-align: start;
+  flex-shrink: 0;
+}
+
+/* ── Scroll progress bar ─────────────────────────────────────────────────── */
+.scroll-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(92deg, #7c5cff, #22d3ee);
+  transform-origin: left;
+  z-index: 9999;
+}
+
+/* ── Free shipping progress bar ──────────────────────────────────────────── */
+.shipping-progress {
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.shipping-progress-fill {
+  height: 100%;
+  border-radius: 9999px;
+  background: linear-gradient(92deg, #7c5cff, #22d3ee);
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── Btn utilities (shared across pages) ─────────────────────────────────── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #7c5cff, #22d3ee);
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition:
+    opacity 0.15s,
+    transform 0.15s,
+    box-shadow 0.15s;
+  text-decoration: none;
+}
+.btn-primary:hover {
+  opacity: 0.92;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px -6px rgba(124, 92, 255, 0.55);
+}
+.btn-primary:active {
+  transform: translateY(0);
+}
+.btn-primary:focus-visible {
+  outline: 2px solid #7c5cff;
+  outline-offset: 2px;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.15s;
+  text-decoration: none;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(124, 92, 255, 0.4);
+  transform: translateY(-1px);
+}
+.btn-secondary:focus-visible {
+  outline: 2px solid #7c5cff;
+  outline-offset: 2px;
+}
+
+/* ── Quick-view overlay ───────────────────────────────────────────────────── */
+.quick-view-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
 }

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { inter, spaceGrotesk } from '@/lib/fonts'
 import { Providers } from './providers'
 import { ThemeScript } from './theme-script'
+import { ScrollProgress } from '@/components/ui/ScrollProgress'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -41,6 +42,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Skip to main content
         </a>
+        <ScrollProgress />
         <Providers>{children}</Providers>
       </body>
     </html>

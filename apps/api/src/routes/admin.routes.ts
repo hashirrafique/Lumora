@@ -11,6 +11,7 @@ import * as analyticsService from '../services/analytics.service'
 import * as userService from '../services/user.service'
 import * as reviewService from '../services/review.service'
 import * as uploadService from '../services/upload.service'
+import { Coupon } from '../models/coupon.model'
 
 const router = Router()
 
@@ -126,7 +127,10 @@ router.patch(
   validate(UpdateUserSchema),
   asyncHandler(async (req, res) => {
     const { id } = req.params as { id: string }
-    const user = await userService.updateUserAdmin(id, req.body as { role?: 'customer' | 'admin'; isBanned?: boolean })
+    const user = await userService.updateUserAdmin(
+      id,
+      req.body as { role?: 'customer' | 'admin'; isBanned?: boolean }
+    )
     sendSuccess(res, user)
   })
 )
@@ -147,7 +151,11 @@ router.get(
   '/reviews',
   validate(AdminReviewListSchema, 'query'),
   asyncHandler(async (req, res) => {
-    const { page, limit, isApproved } = req.query as unknown as { page: number; limit: number; isApproved: string }
+    const { page, limit, isApproved } = req.query as unknown as {
+      page: number
+      limit: number
+      isApproved: string
+    }
     const data = await reviewService.listAllReviews(
       isApproved === 'all' ? undefined : isApproved === 'true',
       page,
@@ -188,6 +196,61 @@ router.post(
     const { folder } = (req.body as { folder?: string }) ?? {}
     const params = uploadService.signUpload(folder)
     sendSuccess(res, params)
+  })
+)
+
+// ── Coupons ───────────────────────────────────────────────────────────────────
+
+const CreateCouponSchema = z.object({
+  code: z.string().min(1).max(20).toUpperCase(),
+  type: z.enum(['percent', 'fixed']),
+  value: z.number().positive(),
+  minSubtotal: z.number().min(0).default(0),
+  maxUses: z.number().int().positive().optional(),
+  expiresAt: z.string().optional(),
+  isActive: z.boolean().default(true),
+})
+
+const UpdateCouponSchema = CreateCouponSchema.partial()
+
+router.get(
+  '/coupons',
+  asyncHandler(async (_req, res) => {
+    const coupons = await Coupon.find().sort({ createdAt: -1 }).lean()
+    sendSuccess(res, coupons)
+  })
+)
+
+router.post(
+  '/coupons',
+  verifyCsrf,
+  validate(CreateCouponSchema),
+  asyncHandler(async (req, res) => {
+    const coupon = await Coupon.create(req.body)
+    sendSuccess(res, coupon, 201)
+  })
+)
+
+router.patch(
+  '/coupons/:id',
+  verifyCsrf,
+  validate(UpdateCouponSchema),
+  asyncHandler(async (req, res) => {
+    const { id } = req.params as { id: string }
+    const coupon = await Coupon.findByIdAndUpdate(id, req.body, { new: true })
+    if (!coupon)
+      throw Object.assign(new Error('Coupon not found'), { statusCode: 404, code: 'NOT_FOUND' })
+    sendSuccess(res, coupon)
+  })
+)
+
+router.delete(
+  '/coupons/:id',
+  verifyCsrf,
+  asyncHandler(async (req, res) => {
+    const { id } = req.params as { id: string }
+    await Coupon.findByIdAndDelete(id)
+    sendSuccess(res, { deleted: true })
   })
 )
 

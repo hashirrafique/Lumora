@@ -429,6 +429,19 @@ export interface WishlistResponse {
 
 // ── Admin ─────────────────────────────────────────────────────────────────────
 
+export interface CouponDTO {
+  _id: string
+  code: string
+  type: 'percent' | 'fixed'
+  value: number
+  minSubtotal: number
+  maxUses?: number
+  usedCount: number
+  expiresAt?: string
+  isActive: boolean
+  createdAt: string
+}
+
 export interface AdminOverviewDTO {
   revenue: number
   orders: number
@@ -582,4 +595,21 @@ export const adminApi = {
       cloudName: string
       folder: string
     }>('/admin/uploads/sign', { method: 'POST', body: JSON.stringify({ folder }) }, getCsrfToken()),
+
+  // Coupons
+  listCoupons: () => apiFetch<CouponDTO[]>('/admin/coupons'),
+  createCoupon: (data: Omit<CouponDTO, '_id' | 'usedCount' | 'createdAt'>) =>
+    apiFetch<CouponDTO>(
+      '/admin/coupons',
+      { method: 'POST', body: JSON.stringify(data) },
+      getCsrfToken()
+    ),
+  updateCoupon: (id: string, data: Partial<Omit<CouponDTO, '_id' | 'usedCount' | 'createdAt'>>) =>
+    apiFetch<CouponDTO>(
+      `/admin/coupons/${id}`,
+      { method: 'PATCH', body: JSON.stringify(data) },
+      getCsrfToken()
+    ),
+  deleteCoupon: (id: string) =>
+    apiFetch<{ deleted: boolean }>(`/admin/coupons/${id}`, { method: 'DELETE' }, getCsrfToken()),
 }

@@ -4,10 +4,11 @@ import { Github, Twitter, Instagram, Shield, RefreshCcw, Headphones, Bot } from 
 
 const shopLinks = [
   { label: 'All Products', href: '/shop' },
+  { label: 'New Arrivals', href: '/new-arrivals' },
+  { label: "Today's Deals", href: '/deals' },
   { label: 'Electronics', href: '/shop?category=electronics' },
   { label: 'Audio', href: '/shop?category=audio' },
   { label: 'Wearables', href: '/shop?category=wearables' },
-  { label: 'Photography', href: '/shop?category=photography' },
   { label: 'Gaming', href: '/shop?category=gaming' },
 ]
 

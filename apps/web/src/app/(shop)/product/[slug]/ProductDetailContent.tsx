@@ -1,11 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Heart, ShoppingCart, Star, ChevronLeft, ArrowRight } from 'lucide-react'
-import { useProduct, useProductReviews } from '@/lib/hooks/useProducts'
+import {
+  Heart,
+  ShoppingCart,
+  Star,
+  ChevronLeft,
+  ArrowRight,
+  Share2,
+  Copy,
+  Check as CheckIcon,
+} from 'lucide-react'
+import { useProduct, useProductReviews, useProducts } from '@/lib/hooks/useProducts'
 import { useAddToCart } from '@/lib/hooks/useCart'
 import { useToggleWishlist, useWishlist } from '@/lib/hooks/useWishlist'
 import { useCartStore } from '@/store/cart.store'
@@ -16,7 +25,14 @@ import { StockBadge } from '@/components/ui/StockBadge'
 import { Badge } from '@/components/ui/Badge'
 import { QtyStepper } from '@/components/ui/QtyStepper'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { ProductCard } from '@/components/product/ProductCard'
+import { RecentlyViewed } from '@/components/ui/RecentlyViewed'
+import { addRecentlyViewed } from '@/lib/recentlyViewed'
+import { useToast } from '@/components/ui/Toast'
 import { cn } from '@/lib/utils'
+
+const BLUR_PLACEHOLDER =
+  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMSIgaGVpZ2h0PSIxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxIiBoZWlnaHQ9IjEiIGZpbGw9IiM3QzVDRkYiLz48L3N2Zz4='
 
 function ProductDetailSkeleton() {
   return (
@@ -49,12 +65,49 @@ export default function ProductDetailPage() {
   const toggleWishlist = useToggleWishlist()
   const { data: wishlist } = useWishlist()
   const openDrawer = useCartStore((s) => s.openDrawer)
+  const toast = useToast()
 
   const liveStock = useStockSocket(product?._id ?? '', product?.stock ?? 0)
 
   const [selectedImage, setSelectedImage] = useState(0)
   const [qty, setQty] = useState(1)
   const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({})
+  const [stickyVisible, setStickyVisible] = useState(false)
+  const [linkCopied, setLinkCopied] = useState(false)
+  const addToCartRef = useRef<HTMLDivElement>(null)
+
+  const categorySlug =
+    typeof product?.category === 'object' ? product.category.slug : (product?.category ?? '')
+  const { data: relatedData } = useProducts({ category: categorySlug, limit: 5 })
+  const relatedProducts = (relatedData?.products ?? [])
+    .filter((p) => p._id !== product?._id)
+    .slice(0, 4)
+
+  useEffect(() => {
+    if (product) addRecentlyViewed(product)
+  }, [product])
+
+  useEffect(() => {
+    const el = addToCartRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => setStickyVisible(!(entry?.isIntersecting ?? true)),
+      { threshold: 0 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [product])
+
+  const handleCopyLink = useCallback(() => {
+    navigator.clipboard
+      .writeText(window.location.href)
+      .then(() => {
+        setLinkCopied(true)
+        toast.success('Link copied to clipboard!')
+        setTimeout(() => setLinkCopied(false), 2000)
+      })
+      .catch(() => toast.error('Could not copy link'))
+  }, [toast])
 
   if (isLoading) return <ProductDetailSkeleton />
 
@@ -87,13 +140,20 @@ export default function ProductDetailPage() {
   async function handleAddToCart() {
     await addToCart.mutateAsync({ productId: product!._id, qty, variant: getVariant() })
     openDrawer()
+    toast.success(`${product!.title} added to cart!`)
   }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
       {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-[var(--muted)] mb-8" aria-label="Breadcrumb">
-        <Link href="/shop" className="hover:text-[var(--text)] transition-colors flex items-center gap-1">
+      <nav
+        className="flex items-center gap-2 text-sm text-[var(--muted)] mb-8"
+        aria-label="Breadcrumb"
+      >
+        <Link
+          href="/shop"
+          className="hover:text-[var(--text)] transition-colors flex items-center gap-1"
+        >
           <ChevronLeft size={14} aria-hidden="true" />
           Shop
         </Link>
@@ -152,7 +212,13 @@ export default function ProductDetailPage() {
                   aria-label={`View image ${i + 1}`}
                   aria-pressed={i === selectedImage}
                 >
-                  <Image src={img.url} alt={img.alt || `Image ${i + 1}`} fill className="object-cover" sizes="80px" />
+                  <Image
+                    src={img.url}
+                    alt={img.alt || `Image ${i + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="80px"
+                  />
                 </button>
               ))}
             </div>
@@ -173,11 +239,7 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          <Price
-            price={product.price}
-            compareAtPrice={product.compareAtPrice}
-            size="xl"
-          />
+          <Price price={product.price} compareAtPrice={product.compareAtPrice} size="xl" />
 
           <StockBadge stock={liveStock} />
 
@@ -229,7 +291,7 @@ export default function ProductDetailPage() {
           ))}
 
           {/* Qty + Add to cart */}
-          <div className="flex items-center gap-3 pt-2">
+          <div ref={addToCartRef} className="flex items-center gap-3 pt-2">
             <QtyStepper
               value={qty}
               min={1}
@@ -262,6 +324,30 @@ export default function ProductDetailPage() {
             </button>
           </div>
 
+          {/* Share */}
+          <div className="flex items-center gap-3 pt-2">
+            <span className="text-xs text-[var(--muted)] flex items-center gap-1">
+              <Share2 size={12} aria-hidden="true" />
+              Share
+            </span>
+            <button
+              type="button"
+              onClick={handleCopyLink}
+              className="flex items-center gap-1.5 text-xs text-[var(--muted)] hover:text-[var(--text)] glass px-2.5 py-1.5 rounded-lg border border-[var(--border)] hover:border-violet/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet"
+            >
+              {linkCopied ? <CheckIcon size={12} className="text-success" /> : <Copy size={12} />}
+              {linkCopied ? 'Copied!' : 'Copy link'}
+            </button>
+            <a
+              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(product.title)}&url=${encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-[var(--muted)] hover:text-[var(--text)] glass px-2.5 py-1.5 rounded-lg border border-[var(--border)] hover:border-violet/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet"
+            >
+              Twitter
+            </a>
+          </div>
+
           {/* Specs */}
           {product.specs.length > 0 && (
             <div className="glass rounded-2xl p-4 space-y-2">
@@ -291,6 +377,40 @@ export default function ProductDetailPage() {
           )}
         </div>
       </div>
+
+      {/* ── Sticky add-to-cart ──────────────────────────────────────────────── */}
+      {stickyVisible && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 glass border-t border-[var(--border)] shadow-card py-3 px-4">
+          <div className="max-w-7xl mx-auto flex items-center gap-4">
+            {product.images[0] && (
+              <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-white/5 shrink-0">
+                <Image
+                  src={product.images[0].url}
+                  alt={product.title}
+                  fill
+                  sizes="48px"
+                  className="object-cover"
+                  placeholder="blur"
+                  blurDataURL={BLUR_PLACEHOLDER}
+                />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-[var(--text)] truncate">{product.title}</p>
+              <Price price={product.price} compareAtPrice={product.compareAtPrice} size="sm" />
+            </div>
+            <button
+              type="button"
+              onClick={handleAddToCart}
+              disabled={liveStock === 0 || addToCart.isPending}
+              className="btn-primary px-5 py-2.5 text-sm shrink-0 disabled:opacity-50"
+            >
+              <ShoppingCart size={15} aria-hidden="true" />
+              Add to cart
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Reviews ─────────────────────────────────────────────────────────── */}
       <section className="mt-16" aria-label="Customer reviews">
@@ -343,7 +463,9 @@ export default function ProductDetailPage() {
                         })}
                       </time>
                       {r.isVerifiedPurchase && (
-                        <Badge variant="success" className="text-[10px]">Verified</Badge>
+                        <Badge variant="success" className="text-[10px]">
+                          Verified
+                        </Badge>
                       )}
                     </div>
                   </div>
@@ -366,6 +488,23 @@ export default function ProductDetailPage() {
           </div>
         )}
       </section>
+
+      {/* ── You may also like ───────────────────────────────────────────────── */}
+      {relatedProducts.length > 0 && (
+        <section className="mt-16" aria-label="Related products">
+          <h2 className="font-display font-semibold text-xl mb-6">You may also like</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {relatedProducts.map((p) => (
+              <ProductCard key={p._id} product={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Recently viewed ─────────────────────────────────────────────────── */}
+      <div className="mt-8 border-t border-[var(--border)] pt-8">
+        <RecentlyViewed excludeId={product._id} />
+      </div>
     </div>
   )
 }

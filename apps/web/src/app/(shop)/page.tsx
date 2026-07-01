@@ -4,10 +4,13 @@ import { NewsletterForm } from '@/components/ui/NewsletterForm'
 import { HeroSection } from '@/components/home/HeroSection'
 import { MarqueeStrip } from '@/components/home/MarqueeStrip'
 import { StatsSection } from '@/components/home/StatsSection'
+import { FlashDealsSection } from '@/components/home/FlashDealsSection'
 import { FeaturedSection } from '@/components/home/FeaturedSection'
 import { BestsellersSection } from '@/components/home/BestsellersSection'
 import { CategoriesSection } from '@/components/home/CategoriesSection'
+import { NewArrivalsSection } from '@/components/home/NewArrivalsSection'
 import { TestimonialsSection } from '@/components/home/TestimonialsSection'
+import { PromoBanner } from '@/components/home/PromoBanner'
 
 export const metadata = {
   title: 'LUMORA — Shop the future. Beautifully.',
@@ -60,6 +63,9 @@ export default function HomePage() {
       {/* Animated stats strip */}
       <StatsSection />
 
+      {/* Flash deals with countdown */}
+      <FlashDealsSection />
+
       {/* Category grid */}
       <CategoriesSection />
 
@@ -68,6 +74,12 @@ export default function HomePage() {
 
       {/* Bestsellers */}
       <BestsellersSection />
+
+      {/* New arrivals */}
+      <NewArrivalsSection />
+
+      {/* Lumi AI promo banner */}
+      <PromoBanner />
 
       {/* Testimonials */}
       <TestimonialsSection />

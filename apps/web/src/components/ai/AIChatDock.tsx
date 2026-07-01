@@ -5,6 +5,7 @@ import { MessageCircle, X, RotateCcw, Send, Loader2 } from 'lucide-react'
 import { useAiChat, type ChatMessage, type ToolAction } from '@/lib/hooks/useAiChat'
 import { useAddToCart } from '@/lib/hooks/useCart'
 import { useCartStore } from '@/store/cart.store'
+import { useUIStore } from '@/store/ui.store'
 import { cn } from '@/lib/utils'
 
 const QUICK_REPLIES = [
@@ -31,7 +32,15 @@ function ToolChip({ name }: { name: string }) {
   )
 }
 
-function MessageBubble({ msg, isLast, streaming }: { msg: ChatMessage; isLast: boolean; streaming: boolean }) {
+function MessageBubble({
+  msg,
+  isLast,
+  streaming,
+}: {
+  msg: ChatMessage
+  isLast: boolean
+  streaming: boolean
+}) {
   const isUser = msg.role === 'user'
   return (
     <div className={cn('flex', isUser ? 'justify-end' : 'justify-start')}>
@@ -43,20 +52,22 @@ function MessageBubble({ msg, isLast, streaming }: { msg: ChatMessage; isLast: b
             : 'glass border border-[var(--border)] rounded-bl-sm text-[var(--text)]'
         )}
       >
-        {msg.content || (isLast && streaming ? (
-          <span className="inline-flex gap-1">
-            <span className="w-1.5 h-1.5 bg-violet rounded-full animate-bounce [animation-delay:0ms]" />
-            <span className="w-1.5 h-1.5 bg-violet rounded-full animate-bounce [animation-delay:150ms]" />
-            <span className="w-1.5 h-1.5 bg-violet rounded-full animate-bounce [animation-delay:300ms]" />
-          </span>
-        ) : null)}
+        {msg.content ||
+          (isLast && streaming ? (
+            <span className="inline-flex gap-1">
+              <span className="w-1.5 h-1.5 bg-violet rounded-full animate-bounce [animation-delay:0ms]" />
+              <span className="w-1.5 h-1.5 bg-violet rounded-full animate-bounce [animation-delay:150ms]" />
+              <span className="w-1.5 h-1.5 bg-violet rounded-full animate-bounce [animation-delay:300ms]" />
+            </span>
+          ) : null)}
       </div>
     </div>
   )
 }
 
 export function AIChatDock() {
-  const [open, setOpen] = useState(false)
+  const open = useUIStore((s) => s.chatOpen)
+  const setOpen = useUIStore((s) => s.setChatOpen)
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -126,7 +137,9 @@ export function AIChatDock() {
           <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-violet/20 flex items-center justify-center">
-                <span className="text-base" aria-hidden="true">✦</span>
+                <span className="text-base" aria-hidden="true">
+                  ✦
+                </span>
               </div>
               <div>
                 <p className="text-sm font-semibold leading-none">Lumi</p>
@@ -156,15 +169,24 @@ export function AIChatDock() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" role="log" aria-live="polite" aria-label="Chat messages">
+          <div
+            className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
+            role="log"
+            aria-live="polite"
+            aria-label="Chat messages"
+          >
             {isEmpty ? (
               <div className="flex flex-col items-center justify-center h-full text-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-violet/15 flex items-center justify-center">
-                  <span className="text-2xl" aria-hidden="true">✦</span>
+                  <span className="text-2xl" aria-hidden="true">
+                    ✦
+                  </span>
                 </div>
                 <div>
                   <p className="font-semibold">Hi, I&apos;m Lumi</p>
-                  <p className="text-xs text-[var(--muted)] mt-1">Tell me what you&apos;re shopping for.</p>
+                  <p className="text-xs text-[var(--muted)] mt-1">
+                    Tell me what you&apos;re shopping for.
+                  </p>
                 </div>
                 <div className="flex flex-col gap-2 w-full">
                   {QUICK_REPLIES.map((q) => (
@@ -191,7 +213,9 @@ export function AIChatDock() {
                 ))}
                 {activeTool && <ToolChip name={activeTool.name} />}
                 {error && (
-                  <p className="text-xs text-danger px-2" role="alert">{error}</p>
+                  <p className="text-xs text-danger px-2" role="alert">
+                    {error}
+                  </p>
                 )}
               </>
             )}
@@ -232,4 +256,3 @@ export function AIChatDock() {
     </>
   )
 }
-

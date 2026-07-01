@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Heart, ShoppingCart, Check, Eye } from 'lucide-react'
+import { Heart, ShoppingCart, Check, Eye, GitCompare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RatingStars } from '@/components/ui/RatingStars'
 import { Price } from '@/components/ui/Price'
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/Badge'
 import { useAddToCart } from '@/lib/hooks/useCart'
 import { useToggleWishlist, useWishlist } from '@/lib/hooks/useWishlist'
 import { useCartStore } from '@/store/cart.store'
+import { useCompareStore } from '@/store/compare.store'
 import type { ProductDTO } from '@/lib/api'
 
 const BLUR_PLACEHOLDER =
@@ -30,6 +31,9 @@ export function ProductCard({ product, className, onQuickView }: ProductCardProp
   const toggleWishlist = useToggleWishlist()
   const { data: wishlist } = useWishlist()
   const openDrawer = useCartStore((s) => s.openDrawer)
+  const { addToCompare, removeFromCompare, isInCompare, compareList } = useCompareStore()
+  const inCompare = isInCompare(product._id)
+  const compareListFull = compareList.length >= 3 && !inCompare
 
   const isWishlisted = wishlist?.products.some((p) => p._id === product._id) ?? false
   const mainImage = product.images[0]
@@ -65,6 +69,16 @@ export function ProductCard({ product, className, onQuickView }: ProductCardProp
       onQuickView?.(product)
     },
     [onQuickView, product]
+  )
+
+  const handleCompare = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (inCompare) removeFromCompare(product._id)
+      else addToCompare(product)
+    },
+    [inCompare, addToCompare, removeFromCompare, product]
   )
 
   return (
@@ -163,6 +177,35 @@ export function ProductCard({ product, className, onQuickView }: ProductCardProp
                 <Eye size={15} className="text-[var(--muted)]" aria-hidden="true" />
               </button>
             )}
+
+            {/* Compare */}
+            <button
+              type="button"
+              onClick={handleCompare}
+              disabled={compareListFull}
+              title={
+                compareListFull
+                  ? 'Max 3 products'
+                  : inCompare
+                    ? 'Remove from compare'
+                    : 'Add to compare'
+              }
+              className={cn(
+                'p-2 rounded-xl glass touch-always-visible',
+                'opacity-0 group-hover:opacity-100 transition-opacity duration-200',
+                'hover:bg-white/10 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet',
+                'disabled:opacity-30 disabled:cursor-not-allowed',
+                inCompare && 'text-violet opacity-100'
+              )}
+              aria-label={inCompare ? 'Remove from compare' : 'Add to compare'}
+              aria-pressed={inCompare}
+            >
+              <GitCompare
+                size={15}
+                className={inCompare ? 'text-violet' : 'text-[var(--muted)]'}
+                aria-hidden="true"
+              />
+            </button>
           </div>
 
           {/* Low stock warning */}

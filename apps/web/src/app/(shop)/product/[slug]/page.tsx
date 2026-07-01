@@ -20,22 +20,33 @@ async function fetchProduct(slug: string): Promise<ProductData | null> {
   try {
     const res = await fetch(`${API_BASE}/products/${slug}`, { next: { revalidate: 60 } })
     if (!res.ok) return null
-    const json = await res.json() as { success: boolean; data?: ProductData }
+    const json = (await res.json()) as { success: boolean; data?: ProductData }
     return json.data ?? null
   } catch {
     return null
   }
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string }
+}): Promise<Metadata> {
   const product = await fetchProduct(params.slug)
   if (!product) {
     return { title: 'Product not found' }
   }
 
   const title = product.title ?? 'Product'
-  const description = product.description?.slice(0, 160) ?? `${title} — ${product.brand ?? 'LUMORA'}`
+  const description =
+    product.description?.slice(0, 160) ?? `${title} — ${product.brand ?? 'LUMORA'}`
   const image = product.images?.[0]?.url
+
+  const ogParams = new URLSearchParams({ title })
+  if (product.price != null) ogParams.set('price', product.price.toFixed(2))
+  if (product.brand) ogParams.set('brand', product.brand)
+  if (image) ogParams.set('image', image)
+  const ogUrl = `/og?${ogParams.toString()}`
 
   return {
     title,
@@ -44,9 +55,9 @@ export async function generateMetadata({ params }: { params: { slug: string } })
       title: `${title} | LUMORA`,
       description,
       type: 'website',
-      ...(image ? { images: [{ url: image, alt: title }] } : {}),
+      images: [{ url: ogUrl, width: 1200, height: 630, alt: title }],
     },
-    twitter: { card: 'summary_large_image', title, description },
+    twitter: { card: 'summary_large_image', title, description, images: [ogUrl] },
   }
 }
 

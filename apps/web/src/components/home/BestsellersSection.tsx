@@ -5,10 +5,11 @@ import { ArrowRight, Flame } from 'lucide-react'
 import { ProductCard } from '@/components/product/ProductCard'
 import { SkeletonCard } from '@/components/ui/SkeletonCard'
 import { FadeUp, StaggerGrid } from '@/components/ui/FadeUp'
+import { SectionError } from '@/components/ui/SectionError'
 import { useProducts } from '@/lib/hooks/useProducts'
 
 export function BestsellersSection() {
-  const { data, isLoading, isError } = useProducts({ sort: 'popular', limit: 4 })
+  const { data, isLoading, isError, refetch } = useProducts({ sort: 'popular', limit: 4 })
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 py-10" aria-label="Bestselling products">
@@ -31,34 +32,40 @@ export function BestsellersSection() {
         </Link>
       </FadeUp>
 
-      {/* Mobile: horizontal snap scroll */}
-      <div className="sm:hidden snap-scroll-x">
-        {isLoading || isError
-          ? Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="snap-start shrink-0 w-56">
-                <SkeletonCard />
-              </div>
-            ))
-          : (data?.products ?? []).map((p) => (
-              <div key={p._id} className="snap-start shrink-0 w-56">
-                <ProductCard product={p} />
-              </div>
-            ))}
-      </div>
-
-      {/* Desktop: grid */}
-      {isLoading || isError ? (
-        <div className="hidden sm:grid grid-cols-2 md:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
+      {isError ? (
+        <SectionError onRetry={refetch} />
       ) : (
-        <StaggerGrid className="hidden sm:grid grid-cols-2 md:grid-cols-4 gap-4">
-          {(data?.products ?? []).map((p) => (
-            <ProductCard key={p._id} product={p} />
-          ))}
-        </StaggerGrid>
+        <>
+          {/* Mobile: horizontal snap scroll */}
+          <div className="sm:hidden snap-scroll-x">
+            {isLoading
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="snap-start shrink-0 w-56">
+                    <SkeletonCard />
+                  </div>
+                ))
+              : (data?.products ?? []).map((p) => (
+                  <div key={p._id} className="snap-start shrink-0 w-56">
+                    <ProductCard product={p} />
+                  </div>
+                ))}
+          </div>
+
+          {/* Desktop: grid */}
+          {isLoading ? (
+            <div className="hidden sm:grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          ) : (
+            <StaggerGrid className="hidden sm:grid grid-cols-2 md:grid-cols-4 gap-4">
+              {(data?.products ?? []).map((p) => (
+                <ProductCard key={p._id} product={p} />
+              ))}
+            </StaggerGrid>
+          )}
+        </>
       )}
     </section>
   )

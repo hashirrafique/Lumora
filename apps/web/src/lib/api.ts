@@ -28,13 +28,23 @@ async function apiFetch<T>(
     headers['X-CSRF-Token'] = csrfToken
   }
 
+  // Abort after 15 s so requests never hang on a cold/unreachable API
+  const controller = new AbortController()
+  const timerId = setTimeout(() => controller.abort(), 15_000)
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     credentials: 'include',
     headers,
+    signal: options.signal ?? controller.signal,
   })
+  clearTimeout(timerId)
 
-  const json = (await res.json()) as { success: boolean; data?: T; error?: { code: string; message: string; details?: unknown[] } }
+  const json = (await res.json()) as {
+    success: boolean
+    data?: T
+    error?: { code: string; message: string; details?: unknown[] }
+  }
 
   if (!json.success || !res.ok) {
     throw new ApiError(
@@ -90,13 +100,19 @@ export function buildProductQueryString(filters: ProductFilters): string {
 export const productsApi = {
   list: (filters: ProductFilters = {}) => {
     const qs = buildProductQueryString(filters)
-    return apiFetch<{ products: ProductDTO[]; meta: { page: number; limit: number; total: number; totalPages: number } }>(`/products?${qs}`)
+    return apiFetch<{
+      products: ProductDTO[]
+      meta: { page: number; limit: number; total: number; totalPages: number }
+    }>(`/products?${qs}`)
   },
   get: (slug: string) => apiFetch<ProductDTO>(`/products/${slug}`),
   featured: () => apiFetch<ProductDTO[]>('/products/featured'),
   bestsellers: () => apiFetch<ProductDTO[]>('/products/bestsellers'),
   reviews: (productId: string, page = 1) =>
-    apiFetch<{ reviews: ReviewDTO[]; meta: { page: number; limit: number; total: number; totalPages: number } }>(`/products/${productId}/reviews?page=${page}`),
+    apiFetch<{
+      reviews: ReviewDTO[]
+      meta: { page: number; limit: number; total: number; totalPages: number }
+    }>(`/products/${productId}/reviews?page=${page}`),
 }
 
 export const categoriesApi = {
@@ -106,42 +122,68 @@ export const categoriesApi = {
 export const cartApi = {
   get: () => apiFetch<CartResponse>('/cart'),
   addItem: (productId: string, qty: number, variant?: { name: string; value: string }) =>
-    apiFetch<CartResponse>('/cart/items', {
-      method: 'POST',
-      body: JSON.stringify({ productId, qty, variant }),
-    }, getCsrfToken()),
+    apiFetch<CartResponse>(
+      '/cart/items',
+      {
+        method: 'POST',
+        body: JSON.stringify({ productId, qty, variant }),
+      },
+      getCsrfToken()
+    ),
   updateItem: (productId: string, qty: number, variantName?: string, variantValue?: string) => {
     const qs = variantName ? `?variantName=${variantName}&variantValue=${variantValue}` : ''
-    return apiFetch<CartResponse>(`/cart/items/${productId}${qs}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ qty }),
-    }, getCsrfToken())
+    return apiFetch<CartResponse>(
+      `/cart/items/${productId}${qs}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ qty }),
+      },
+      getCsrfToken()
+    )
   },
   removeItem: (productId: string, variantName?: string, variantValue?: string) => {
     const qs = variantName ? `?variantName=${variantName}&variantValue=${variantValue}` : ''
-    return apiFetch<CartResponse>(`/cart/items/${productId}${qs}`, { method: 'DELETE' }, getCsrfToken())
+    return apiFetch<CartResponse>(
+      `/cart/items/${productId}${qs}`,
+      { method: 'DELETE' },
+      getCsrfToken()
+    )
   },
   clear: () => apiFetch<CartResponse>('/cart', { method: 'DELETE' }, getCsrfToken()),
   applyCoupon: (code: string) =>
-    apiFetch<CartResponse>('/cart/coupon', {
-      method: 'POST',
-      body: JSON.stringify({ code }),
-    }, getCsrfToken()),
+    apiFetch<CartResponse>(
+      '/cart/coupon',
+      {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+      },
+      getCsrfToken()
+    ),
   removeCoupon: () => apiFetch<CartResponse>('/cart/coupon', { method: 'DELETE' }, getCsrfToken()),
-  merge: (items: Array<{ productId: string; qty: number; variant?: { name: string; value: string } }>) =>
-    apiFetch<CartResponse>('/cart/merge', {
-      method: 'POST',
-      body: JSON.stringify({ items }),
-    }, getCsrfToken()),
+  merge: (
+    items: Array<{ productId: string; qty: number; variant?: { name: string; value: string } }>
+  ) =>
+    apiFetch<CartResponse>(
+      '/cart/merge',
+      {
+        method: 'POST',
+        body: JSON.stringify({ items }),
+      },
+      getCsrfToken()
+    ),
 }
 
 export const wishlistApi = {
   get: () => apiFetch<WishlistResponse>('/wishlist'),
   toggle: (productId: string) =>
-    apiFetch<{ added: boolean }>('/wishlist/toggle', {
-      method: 'POST',
-      body: JSON.stringify({ productId }),
-    }, getCsrfToken()),
+    apiFetch<{ added: boolean }>(
+      '/wishlist/toggle',
+      {
+        method: 'POST',
+        body: JSON.stringify({ productId }),
+      },
+      getCsrfToken()
+    ),
 }
 
 // ── Auth ──────────────────────────────────────────────────────────────────────
@@ -170,43 +212,71 @@ export interface AddressDTO {
 
 export const authApi = {
   register: (name: string, email: string, password: string) =>
-    apiFetch<UserDTO>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ name, email, password }),
-    }, getCsrfToken()),
+    apiFetch<UserDTO>(
+      '/auth/register',
+      {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password }),
+      },
+      getCsrfToken()
+    ),
   login: (email: string, password: string) =>
-    apiFetch<UserDTO>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password }),
-    }, getCsrfToken()),
+    apiFetch<UserDTO>(
+      '/auth/login',
+      {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      },
+      getCsrfToken()
+    ),
   logout: () =>
     apiFetch<{ loggedOut: boolean }>('/auth/logout', { method: 'POST' }, getCsrfToken()),
   me: () => apiFetch<UserDTO>('/auth/me'),
   forgotPassword: (email: string) =>
-    apiFetch<{ sent: boolean }>('/auth/forgot-password', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    }, getCsrfToken()),
+    apiFetch<{ sent: boolean }>(
+      '/auth/forgot-password',
+      {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      },
+      getCsrfToken()
+    ),
   resetPassword: (token: string, password: string) =>
-    apiFetch<{ reset: boolean }>('/auth/reset-password', {
-      method: 'POST',
-      body: JSON.stringify({ token, password }),
-    }, getCsrfToken()),
+    apiFetch<{ reset: boolean }>(
+      '/auth/reset-password',
+      {
+        method: 'POST',
+        body: JSON.stringify({ token, password }),
+      },
+      getCsrfToken()
+    ),
   listAddresses: () => apiFetch<AddressDTO[]>('/auth/me/addresses'),
   addAddress: (addr: Omit<AddressDTO, '_id'>) =>
-    apiFetch<AddressDTO>('/auth/me/addresses', {
-      method: 'POST',
-      body: JSON.stringify(addr),
-    }, getCsrfToken()),
+    apiFetch<AddressDTO>(
+      '/auth/me/addresses',
+      {
+        method: 'POST',
+        body: JSON.stringify(addr),
+      },
+      getCsrfToken()
+    ),
   updateAddress: (id: string, addr: Partial<AddressDTO>) =>
-    apiFetch<AddressDTO>(`/auth/me/addresses/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(addr),
-    }, getCsrfToken()),
+    apiFetch<AddressDTO>(
+      `/auth/me/addresses/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(addr),
+      },
+      getCsrfToken()
+    ),
   deleteAddress: (id: string) =>
-    apiFetch<{ deleted: boolean }>(`/auth/me/addresses/${id}`, {
-      method: 'DELETE',
-    }, getCsrfToken()),
+    apiFetch<{ deleted: boolean }>(
+      `/auth/me/addresses/${id}`,
+      {
+        method: 'DELETE',
+      },
+      getCsrfToken()
+    ),
 }
 
 // ── Orders ─────────────────────────────────────────────────────────────────────
@@ -256,13 +326,16 @@ export interface CheckoutInput {
 
 export const ordersApi = {
   create: (input: CheckoutInput, idempotencyKey?: string) =>
-    apiFetch<OrderDTO>('/orders', {
-      method: 'POST',
-      body: JSON.stringify(input),
-      headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
-    }, getCsrfToken()),
-  list: (page = 1, limit = 10) =>
-    apiFetch<OrderDTO[]>(`/orders?page=${page}&limit=${limit}`),
+    apiFetch<OrderDTO>(
+      '/orders',
+      {
+        method: 'POST',
+        body: JSON.stringify(input),
+        headers: idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {},
+      },
+      getCsrfToken()
+    ),
+  list: (page = 1, limit = 10) => apiFetch<OrderDTO[]>(`/orders?page=${page}&limit=${limit}`),
   get: (orderNumber: string) => apiFetch<OrderDTO>(`/orders/${orderNumber}`),
 }
 
@@ -361,7 +434,12 @@ export interface AdminOverviewDTO {
   orders: number
   aov: number
   newUsers: number
-  deltas: { revenue: number | null; orders: number | null; aov: number | null; newUsers: number | null }
+  deltas: {
+    revenue: number | null
+    orders: number | null
+    aov: number | null
+    newUsers: number | null
+  }
 }
 
 export interface SalesDataPoint {
@@ -420,7 +498,8 @@ export const adminApi = {
   // Analytics
   overview: (days = 30) => apiFetch<AdminOverviewDTO>(`/admin/stats/overview?days=${days}`),
   sales: (days = 30) => apiFetch<SalesDataPoint[]>(`/admin/stats/sales?days=${days}`),
-  top: () => apiFetch<{ topProducts: TopProductDTO[]; topCategories: TopCategoryDTO[] }>('/admin/stats/top'),
+  top: () =>
+    apiFetch<{ topProducts: TopProductDTO[]; topCategories: TopCategoryDTO[] }>('/admin/stats/top'),
 
   // Orders
   listOrders: (status?: string, page = 1, limit = 20) => {
@@ -429,10 +508,14 @@ export const adminApi = {
     return apiFetch<{ data: OrderDTO[]; meta: PaginatedMeta }>(`/admin/orders?${qs}`)
   },
   updateOrderStatus: (id: string, status: string) =>
-    apiFetch<OrderDTO>(`/admin/orders/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    }, getCsrfToken()),
+    apiFetch<OrderDTO>(
+      `/admin/orders/${id}/status`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      },
+      getCsrfToken()
+    ),
 
   // Users
   listUsers: (q?: string, role?: string, page = 1, limit = 20) => {
@@ -442,41 +525,61 @@ export const adminApi = {
     return apiFetch<{ data: AdminUserDTO[]; meta: PaginatedMeta }>(`/admin/users?${qs}`)
   },
   updateUser: (id: string, payload: { role?: 'customer' | 'admin'; isBanned?: boolean }) =>
-    apiFetch<AdminUserDTO>(`/admin/users/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    }, getCsrfToken()),
+    apiFetch<AdminUserDTO>(
+      `/admin/users/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      },
+      getCsrfToken()
+    ),
 
   // Reviews
   listReviews: (isApproved: 'true' | 'false' | 'all' = 'all', page = 1, limit = 20) =>
-    apiFetch<{ data: AdminReviewDTO[]; meta: PaginatedMeta }>(`/admin/reviews?isApproved=${isApproved}&page=${page}&limit=${limit}`),
+    apiFetch<{ data: AdminReviewDTO[]; meta: PaginatedMeta }>(
+      `/admin/reviews?isApproved=${isApproved}&page=${page}&limit=${limit}`
+    ),
   approveReview: (id: string, isApproved: boolean) =>
-    apiFetch<AdminReviewDTO>(`/admin/reviews/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify({ isApproved }),
-    }, getCsrfToken()),
+    apiFetch<AdminReviewDTO>(
+      `/admin/reviews/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify({ isApproved }),
+      },
+      getCsrfToken()
+    ),
   deleteReview: (id: string) =>
     apiFetch<{ deleted: boolean }>(`/admin/reviews/${id}`, { method: 'DELETE' }, getCsrfToken()),
 
   // Products (admin mutations)
   createProduct: (data: Record<string, unknown>) =>
-    apiFetch<ProductDTO>('/products', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }, getCsrfToken()),
+    apiFetch<ProductDTO>(
+      '/products',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      getCsrfToken()
+    ),
   updateProduct: (id: string, data: Record<string, unknown>) =>
-    apiFetch<ProductDTO>(`/products/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(data),
-    }, getCsrfToken()),
+    apiFetch<ProductDTO>(
+      `/products/${id}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(data),
+      },
+      getCsrfToken()
+    ),
   deleteProduct: (id: string) =>
     apiFetch<{ deleted: boolean }>(`/products/${id}`, { method: 'DELETE' }, getCsrfToken()),
 
   // Uploads
   signUpload: (folder?: string) =>
-    apiFetch<{ signature: string; timestamp: number; apiKey: string; cloudName: string; folder: string }>(
-      '/admin/uploads/sign',
-      { method: 'POST', body: JSON.stringify({ folder }) },
-      getCsrfToken()
-    ),
+    apiFetch<{
+      signature: string
+      timestamp: number
+      apiKey: string
+      cloudName: string
+      folder: string
+    }>('/admin/uploads/sign', { method: 'POST', body: JSON.stringify({ folder }) }, getCsrfToken()),
 }

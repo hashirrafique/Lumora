@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { FadeUp } from '@/components/ui/FadeUp'
+import { SectionError } from '@/components/ui/SectionError'
 import { useCategories } from '@/lib/hooks/useProducts'
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -28,7 +29,9 @@ const CATEGORY_GRADIENTS: Record<string, string> = {
 }
 
 export function CategoriesSection() {
-  const { data: categories, isLoading } = useCategories()
+  const { data: categories, isLoading, isError, refetch } = useCategories()
+
+  if (isError) return <SectionError onRetry={refetch} message="Couldn't load categories" />
 
   const items = isLoading
     ? Array.from({ length: 6 }).map((_, i) => ({ _id: String(i), name: '', slug: '' }))

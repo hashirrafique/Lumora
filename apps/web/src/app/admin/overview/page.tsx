@@ -12,6 +12,7 @@ import {
   Tooltip,
 } from 'recharts'
 import { useAdminOverview, useAdminSales, useAdminTop } from '@/lib/hooks/useAdmin'
+import { AnimatedNumber } from '@/components/ui/AnimatedNumber'
 import { cn } from '@/lib/utils'
 import type { TopProductDTO } from '@/lib/api'
 
@@ -21,8 +22,17 @@ function DeltaBadge({ delta }: { delta: number | null }) {
   if (delta === null) return <span className="text-xs text-[var(--muted)]">—</span>
   const up = delta >= 0
   return (
-    <span className={cn('flex items-center gap-0.5 text-xs font-medium', up ? 'text-success' : 'text-danger')}>
-      {up ? <TrendingUp size={12} aria-hidden="true" /> : <TrendingDown size={12} aria-hidden="true" />}
+    <span
+      className={cn(
+        'flex items-center gap-0.5 text-xs font-medium',
+        up ? 'text-success' : 'text-danger'
+      )}
+    >
+      {up ? (
+        <TrendingUp size={12} aria-hidden="true" />
+      ) : (
+        <TrendingDown size={12} aria-hidden="true" />
+      )}
       {Math.abs(delta)}%
     </span>
   )
@@ -41,11 +51,6 @@ function KpiCard({
   icon: React.ElementType
   format?: 'number' | 'currency'
 }) {
-  const display =
-    format === 'currency'
-      ? `$${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-      : value.toLocaleString()
-
   return (
     <div className="glass rounded-2xl p-5 space-y-3">
       <div className="flex items-center justify-between">
@@ -54,7 +59,14 @@ function KpiCard({
           <Icon size={16} className="text-violet" aria-hidden="true" />
         </div>
       </div>
-      <p className="font-display font-bold text-2xl">{display}</p>
+      <p className="font-display font-bold text-2xl">
+        <AnimatedNumber
+          value={value}
+          prefix={format === 'currency' ? '$' : ''}
+          decimals={format === 'currency' ? 2 : 0}
+          className="tabular-nums"
+        />
+      </p>
       <DeltaBadge delta={delta} />
     </div>
   )
@@ -81,9 +93,7 @@ export default function OverviewPage() {
               onClick={() => setDays(d)}
               className={cn(
                 'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                d === days
-                  ? 'bg-violet text-white'
-                  : 'text-[var(--muted)] hover:text-[var(--text)]'
+                d === days ? 'bg-violet text-white' : 'text-[var(--muted)] hover:text-[var(--text)]'
               )}
             >
               {d}d
@@ -101,10 +111,32 @@ export default function OverviewPage() {
         </div>
       ) : overview ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <KpiCard label="Revenue" value={overview.revenue} delta={overview.deltas.revenue} icon={DollarSign} format="currency" />
-          <KpiCard label="Orders" value={overview.orders} delta={overview.deltas.orders} icon={ShoppingBag} />
-          <KpiCard label="Avg. order value" value={overview.aov} delta={overview.deltas.aov} icon={Package} format="currency" />
-          <KpiCard label="New users" value={overview.newUsers} delta={overview.deltas.newUsers} icon={Users} />
+          <KpiCard
+            label="Revenue"
+            value={overview.revenue}
+            delta={overview.deltas.revenue}
+            icon={DollarSign}
+            format="currency"
+          />
+          <KpiCard
+            label="Orders"
+            value={overview.orders}
+            delta={overview.deltas.orders}
+            icon={ShoppingBag}
+          />
+          <KpiCard
+            label="Avg. order value"
+            value={overview.aov}
+            delta={overview.deltas.aov}
+            icon={Package}
+            format="currency"
+          />
+          <KpiCard
+            label="New users"
+            value={overview.newUsers}
+            delta={overview.deltas.newUsers}
+            icon={Users}
+          />
         </div>
       ) : null}
 
@@ -168,7 +200,9 @@ export default function OverviewPage() {
                   <span className="text-xs text-[var(--muted)] w-4">{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{p.title}</p>
-                    <p className="text-xs text-[var(--muted)]">{p.soldCount} sold · ${p.price.toFixed(2)}</p>
+                    <p className="text-xs text-[var(--muted)]">
+                      {p.soldCount} sold · ${p.price.toFixed(2)}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -183,7 +217,9 @@ export default function OverviewPage() {
                   <span className="text-xs text-[var(--muted)] w-4">{i + 1}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{c.name}</p>
-                    <p className="text-xs text-[var(--muted)]">{c.productCount} products · {c.totalSold} sold</p>
+                    <p className="text-xs text-[var(--muted)]">
+                      {c.productCount} products · {c.totalSold} sold
+                    </p>
                   </div>
                 </div>
               ))}

@@ -17,8 +17,22 @@ export default function ProfilePage() {
       <h1 className="font-display font-semibold text-xl">Profile</h1>
       <div className="glass rounded-2xl p-6 space-y-4">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet to-cyan flex items-center justify-center text-xl font-bold text-white">
-            {user.name.charAt(0).toUpperCase()}
+          <div className="relative group">
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-violet to-cyan flex items-center justify-center text-xl font-bold text-white">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <label
+              title="Avatar upload coming soon"
+              className="absolute inset-0 rounded-full bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center cursor-not-allowed transition-opacity"
+              aria-label="Avatar upload coming soon"
+            >
+              <span className="text-white text-[10px] font-medium text-center leading-tight px-1">
+                Coming
+                <br />
+                soon
+              </span>
+              <input type="file" accept="image/*" disabled className="sr-only" />
+            </label>
           </div>
           <div>
             <p className="font-semibold">{user.name}</p>

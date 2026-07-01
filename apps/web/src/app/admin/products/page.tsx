@@ -4,7 +4,11 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Plus, Pencil, Trash2, Search, Upload, X } from 'lucide-react'
 import { useProducts, useCategories } from '@/lib/hooks/useProducts'
-import { useAdminCreateProduct, useAdminUpdateProduct, useAdminDeleteProduct } from '@/lib/hooks/useAdmin'
+import {
+  useAdminCreateProduct,
+  useAdminUpdateProduct,
+  useAdminDeleteProduct,
+} from '@/lib/hooks/useAdmin'
 import { adminApi } from '@/lib/api'
 import { Badge } from '@/components/ui/Badge'
 import { Input } from '@/components/ui/Input'
@@ -69,7 +73,10 @@ function formToPayload(form: ProductFormData) {
     stock: parseInt(form.stock, 10),
     isFeatured: form.isFeatured,
     isBestseller: form.isBestseller,
-    tags: form.tags.split(',').map((t) => t.trim()).filter(Boolean),
+    tags: form.tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean),
     images: form.imageUrl ? [{ url: form.imageUrl, alt: form.imageAlt || form.title }] : [],
   }
 }
@@ -107,11 +114,11 @@ function ProductDrawer({
       fd.append('api_key', params.apiKey)
       fd.append('folder', params.folder)
 
-      const res = await fetch(
-        `https://api.cloudinary.com/v1_1/${params.cloudName}/image/upload`,
-        { method: 'POST', body: fd }
-      )
-      const data = await res.json() as { secure_url: string; original_filename: string }
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${params.cloudName}/image/upload`, {
+        method: 'POST',
+        body: fd,
+      })
+      const data = (await res.json()) as { secure_url: string; original_filename: string }
       set('imageUrl', data.secure_url)
       set('imageAlt', data.original_filename ?? form.title)
     } catch {
@@ -148,21 +155,37 @@ function ProductDrawer({
       <aside className="relative ml-auto w-full max-w-lg glass border-l border-[var(--border)] flex flex-col h-full overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-5 border-b border-[var(--border)] sticky top-0 glass z-10">
           <h2 className="font-semibold">{product ? 'Edit product' : 'New product'}</h2>
-          <button type="button" onClick={onClose} className="p-2 rounded-xl hover:bg-white/5 text-[var(--muted)]" aria-label="Close drawer">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2 rounded-xl hover:bg-white/5 text-[var(--muted)]"
+            aria-label="Close drawer"
+          >
             <X size={18} aria-hidden="true" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 px-6 py-5 space-y-4">
           {error && (
-            <div className="bg-danger/10 border border-danger/30 rounded-xl px-4 py-3 text-sm text-danger" role="alert">
+            <div
+              className="bg-danger/10 border border-danger/30 rounded-xl px-4 py-3 text-sm text-danger"
+              role="alert"
+            >
               {error}
             </div>
           )}
 
-          <Input label="Title" value={form.title} onChange={(e) => set('title', e.target.value)} required disabled={isPending} />
+          <Input
+            label="Title"
+            value={form.title}
+            onChange={(e) => set('title', e.target.value)}
+            required
+            disabled={isPending}
+          />
           <div>
-            <label className="block text-xs font-medium text-[var(--muted)] mb-1.5">Description</label>
+            <label className="block text-xs font-medium text-[var(--muted)] mb-1.5">
+              Description
+            </label>
             <textarea
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
@@ -174,9 +197,17 @@ function ProductDrawer({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Brand" value={form.brand} onChange={(e) => set('brand', e.target.value)} required disabled={isPending} />
+            <Input
+              label="Brand"
+              value={form.brand}
+              onChange={(e) => set('brand', e.target.value)}
+              required
+              disabled={isPending}
+            />
             <div>
-              <label className="block text-xs font-medium text-[var(--muted)] mb-1.5">Category</label>
+              <label className="block text-xs font-medium text-[var(--muted)] mb-1.5">
+                Category
+              </label>
               <select
                 value={form.category}
                 onChange={(e) => set('category', e.target.value)}
@@ -184,28 +215,70 @@ function ProductDrawer({
                 disabled={isPending}
                 className="w-full glass border border-[var(--border)] rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-violet disabled:opacity-60 text-[var(--text)]"
               >
-                <option value="" style={{ background: 'var(--bg)' }}>Select…</option>
+                <option value="" style={{ background: 'var(--bg)' }}>
+                  Select…
+                </option>
                 {categories.map((c) => (
-                  <option key={c._id} value={c._id} style={{ background: 'var(--bg)' }}>{c.name}</option>
+                  <option key={c._id} value={c._id} style={{ background: 'var(--bg)' }}>
+                    {c.name}
+                  </option>
                 ))}
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-3 gap-3">
-            <Input label="Price ($)" type="number" min="0" step="0.01" value={form.price} onChange={(e) => set('price', e.target.value)} required disabled={isPending} />
-            <Input label="Compare at ($)" type="number" min="0" step="0.01" value={form.compareAtPrice} onChange={(e) => set('compareAtPrice', e.target.value)} disabled={isPending} />
-            <Input label="Stock" type="number" min="0" step="1" value={form.stock} onChange={(e) => set('stock', e.target.value)} required disabled={isPending} />
+            <Input
+              label="Price ($)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.price}
+              onChange={(e) => set('price', e.target.value)}
+              required
+              disabled={isPending}
+            />
+            <Input
+              label="Compare at ($)"
+              type="number"
+              min="0"
+              step="0.01"
+              value={form.compareAtPrice}
+              onChange={(e) => set('compareAtPrice', e.target.value)}
+              disabled={isPending}
+            />
+            <Input
+              label="Stock"
+              type="number"
+              min="0"
+              step="1"
+              value={form.stock}
+              onChange={(e) => set('stock', e.target.value)}
+              required
+              disabled={isPending}
+            />
           </div>
 
-          <Input label="Tags (comma separated)" value={form.tags} onChange={(e) => set('tags', e.target.value)} placeholder="luxury, new, sale" disabled={isPending} />
+          <Input
+            label="Tags (comma separated)"
+            value={form.tags}
+            onChange={(e) => set('tags', e.target.value)}
+            placeholder="luxury, new, sale"
+            disabled={isPending}
+          />
 
           {/* Image upload */}
           <div>
             <p className="text-xs font-medium text-[var(--muted)] mb-1.5">Product image</p>
             {form.imageUrl && (
               <div className="relative w-24 h-24 rounded-xl overflow-hidden mb-2 bg-white/5">
-                <Image src={form.imageUrl} alt={form.imageAlt || 'Product'} fill className="object-cover" sizes="96px" />
+                <Image
+                  src={form.imageUrl}
+                  alt={form.imageAlt || 'Product'}
+                  fill
+                  className="object-cover"
+                  sizes="96px"
+                />
               </div>
             )}
             <div className="flex gap-2">
@@ -288,47 +361,86 @@ function ProductDrawer({
 export default function AdminProductsPage() {
   const [q, setQ] = useState('')
   const [page, setPage] = useState(1)
+  const [tab, setTab] = useState<'all' | 'low-stock'>('all')
   const [drawerProduct, setDrawerProduct] = useState<ProductDTO | null | 'new'>(null)
-  const { data, isLoading } = useProducts({ q: q || undefined, page, limit: 20 })
+  const { data, isLoading } = useProducts(
+    tab === 'low-stock' ? { limit: 200 } : { q: q || undefined, page, limit: 20 }
+  )
   const { data: categoriesData } = useCategories()
   const deleteProduct = useAdminDeleteProduct()
 
-  const products = data?.products ?? []
-  const meta = data?.meta
+  const allProducts = data?.products ?? []
+  const products = tab === 'low-stock' ? allProducts.filter((p) => p.stock <= 5) : allProducts
+  const meta = tab === 'all' ? data?.meta : undefined
   const categories = (categoriesData as CategoryDTO[] | undefined) ?? []
+  const lowStockCount = allProducts.filter((p) => p.stock <= 5).length
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display font-bold text-2xl">Products</h1>
-          <p className="text-sm text-[var(--muted)] mt-0.5">Create, edit, and manage your catalog</p>
+          <p className="text-sm text-[var(--muted)] mt-0.5">
+            Create, edit, and manage your catalog
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setDrawerProduct('new')}
-          className="btn-primary gap-2"
-        >
+        <button type="button" onClick={() => setDrawerProduct('new')} className="btn-primary gap-2">
           <Plus size={16} aria-hidden="true" />
           New product
         </button>
       </div>
 
-      <div className="relative">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" aria-hidden="true" />
-        <input
-          type="search"
-          placeholder="Search products…"
-          value={q}
-          onChange={(e) => { setQ(e.target.value); setPage(1) }}
-          className="w-full pl-9 pr-4 py-2 text-sm glass border border-[var(--border)] rounded-xl focus:outline-none focus:border-violet"
-          aria-label="Search products"
-        />
+      {/* Tabs */}
+      <div className="flex gap-1 glass rounded-xl p-1 w-fit">
+        {(['all', 'low-stock'] as const).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => {
+              setTab(t)
+              setPage(1)
+            }}
+            className={cn(
+              'flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-all',
+              t === tab ? 'bg-violet text-white' : 'text-[var(--muted)] hover:text-[var(--text)]'
+            )}
+          >
+            {t === 'all' ? 'All products' : 'Low stock'}
+            {t === 'low-stock' && tab !== 'low-stock' && lowStockCount > 0 && (
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-danger/90 text-white text-[10px] font-bold flex items-center justify-center">
+                {lowStockCount}
+              </span>
+            )}
+          </button>
+        ))}
       </div>
+
+      {tab === 'all' && (
+        <div className="relative">
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]"
+            aria-hidden="true"
+          />
+          <input
+            type="search"
+            placeholder="Search products…"
+            value={q}
+            onChange={(e) => {
+              setQ(e.target.value)
+              setPage(1)
+            }}
+            className="w-full pl-9 pr-4 py-2 text-sm glass border border-[var(--border)] rounded-xl focus:outline-none focus:border-violet"
+            aria-label="Search products"
+          />
+        </div>
+      )}
 
       {isLoading ? (
         <div className="space-y-2">
-          {Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-16 skeleton rounded-xl" />)}
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-16 skeleton rounded-xl" />
+          ))}
         </div>
       ) : products.length === 0 ? (
         <div className="glass rounded-2xl p-12 text-center">
@@ -339,26 +451,49 @@ export default function AdminProductsPage() {
           <table className="w-full text-sm" role="table">
             <thead>
               <tr className="border-b border-[var(--border)]">
-                <th className="text-left px-4 py-3 text-xs text-[var(--muted)] font-medium">Product</th>
-                <th className="text-left px-4 py-3 text-xs text-[var(--muted)] font-medium">Category</th>
-                <th className="text-right px-4 py-3 text-xs text-[var(--muted)] font-medium">Price</th>
-                <th className="text-right px-4 py-3 text-xs text-[var(--muted)] font-medium">Stock</th>
-                <th className="text-left px-4 py-3 text-xs text-[var(--muted)] font-medium">Flags</th>
-                <th className="text-right px-4 py-3 text-xs text-[var(--muted)] font-medium">Actions</th>
+                <th className="text-left px-4 py-3 text-xs text-[var(--muted)] font-medium">
+                  Product
+                </th>
+                <th className="text-left px-4 py-3 text-xs text-[var(--muted)] font-medium">
+                  Category
+                </th>
+                <th className="text-right px-4 py-3 text-xs text-[var(--muted)] font-medium">
+                  Price
+                </th>
+                <th className="text-right px-4 py-3 text-xs text-[var(--muted)] font-medium">
+                  Stock
+                </th>
+                <th className="text-left px-4 py-3 text-xs text-[var(--muted)] font-medium">
+                  Flags
+                </th>
+                <th className="text-right px-4 py-3 text-xs text-[var(--muted)] font-medium">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {products.map((product) => (
-                <tr key={product._id} className="border-b border-[var(--border)] last:border-0 hover:bg-white/3 transition-colors">
+                <tr
+                  key={product._id}
+                  className="border-b border-[var(--border)] last:border-0 hover:bg-white/3 transition-colors"
+                >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       {product.images[0] && (
                         <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-white/5 shrink-0">
-                          <Image src={product.images[0].url} alt={product.images[0].alt || product.title} fill className="object-cover" sizes="40px" />
+                          <Image
+                            src={product.images[0].url}
+                            alt={product.images[0].alt || product.title}
+                            fill
+                            className="object-cover"
+                            sizes="40px"
+                          />
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="font-medium text-sm truncate max-w-[180px]">{product.title}</p>
+                        <p className="font-medium text-sm truncate max-w-[180px]">
+                          {product.title}
+                        </p>
                         <p className="text-xs text-[var(--muted)]">{product.brand}</p>
                       </div>
                     </div>
@@ -366,17 +501,40 @@ export default function AdminProductsPage() {
                   <td className="px-4 py-3 text-xs text-[var(--muted)]">
                     {typeof product.category === 'object' ? product.category.name : '—'}
                   </td>
-                  <td className="px-4 py-3 text-right font-medium text-sm">${product.price.toFixed(2)}</td>
+                  <td className="px-4 py-3 text-right font-medium text-sm">
+                    ${product.price.toFixed(2)}
+                  </td>
                   <td className="px-4 py-3 text-right">
-                    <span className={cn('text-xs font-medium', product.stock === 0 ? 'text-danger' : product.stock <= 5 ? 'text-warning' : 'text-success')}>
+                    <span
+                      className={cn(
+                        'text-xs font-medium',
+                        product.stock === 0
+                          ? 'text-danger'
+                          : product.stock <= 5
+                            ? 'text-warning'
+                            : 'text-success'
+                      )}
+                    >
                       {product.stock}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1.5 flex-wrap">
-                      {product.isFeatured && <Badge variant="violet" className="text-[10px]">Featured</Badge>}
-                      {product.isBestseller && <Badge variant="cyan" className="text-[10px]">Bestseller</Badge>}
-                      {!product.isActive && <Badge variant="danger" className="text-[10px]">Inactive</Badge>}
+                      {product.isFeatured && (
+                        <Badge variant="violet" className="text-[10px]">
+                          Featured
+                        </Badge>
+                      )}
+                      {product.isBestseller && (
+                        <Badge variant="cyan" className="text-[10px]">
+                          Bestseller
+                        </Badge>
+                      )}
+                      {!product.isActive && (
+                        <Badge variant="danger" className="text-[10px]">
+                          Inactive
+                        </Badge>
+                      )}
                     </div>
                   </td>
                   <td className="px-4 py-3">
@@ -413,9 +571,25 @@ export default function AdminProductsPage() {
 
       {meta && meta.totalPages > 1 && (
         <div className="flex justify-center gap-2">
-          <button type="button" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1} className="px-3 py-1.5 rounded-xl text-xs glass border border-[var(--border)] disabled:opacity-40">Prev</button>
-          <span className="px-3 py-1.5 text-xs text-[var(--muted)]">{page} / {meta.totalPages}</span>
-          <button type="button" onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))} disabled={page === meta.totalPages} className="px-3 py-1.5 rounded-xl text-xs glass border border-[var(--border)] disabled:opacity-40">Next</button>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-3 py-1.5 rounded-xl text-xs glass border border-[var(--border)] disabled:opacity-40"
+          >
+            Prev
+          </button>
+          <span className="px-3 py-1.5 text-xs text-[var(--muted)]">
+            {page} / {meta.totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+            disabled={page === meta.totalPages}
+            className="px-3 py-1.5 rounded-xl text-xs glass border border-[var(--border)] disabled:opacity-40"
+          >
+            Next
+          </button>
         </div>
       )}
 

@@ -466,127 +466,115 @@ export function Navbar() {
 
       <CommandPalette open={cmdOpen} onClose={() => setCmdOpen(false)} />
 
-      {/* Mobile menu */}
+      {/* Mobile menu — full-screen glass overlay */}
       <AnimatePresence>
         {mobileOpen && (
-          <>
-            <motion.div
-              key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
-              onClick={() => setMobileOpen(false)}
-              aria-hidden="true"
-            />
-            <motion.div
-              key="panel"
-              id="mobile-menu"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Mobile navigation menu"
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="fixed top-0 right-0 bottom-0 z-50 w-[280px] md:hidden flex flex-col bg-[var(--surface)] border-l border-[var(--border)] shadow-card"
+          <motion.div
+            key="mobile-overlay"
+            id="mobile-menu"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobile navigation menu"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 z-50 md:hidden flex flex-col"
+            style={{ background: 'color-mix(in oklab, var(--bg) 92%, transparent)' }}
+          >
+            {/* Backdrop blur layer */}
+            <div className="absolute inset-0 backdrop-blur-2xl" aria-hidden="true" />
+
+            {/* Header */}
+            <div className="relative z-10 flex items-center justify-between px-6 h-16 border-b border-[var(--border)]">
+              <Logo size="md" />
+              <button
+                onClick={() => setMobileOpen(false)}
+                aria-label="Close menu"
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--muted)] hover:bg-white/10 transition-colors"
+              >
+                <X size={20} aria-hidden="true" />
+              </button>
+            </div>
+
+            {/* Nav links — stagger from left */}
+            <nav
+              aria-label="Mobile navigation"
+              className="relative z-10 flex-1 overflow-y-auto px-6 py-6"
             >
-              <div className="flex items-center justify-between px-6 h-16 border-b border-[var(--border)]">
-                <Logo size="md" />
-                <button
-                  onClick={() => setMobileOpen(false)}
-                  aria-label="Close menu"
-                  className="w-9 h-9 rounded-xl flex items-center justify-center text-[var(--muted)] hover:bg-white/5 transition-colors"
-                >
-                  <X size={18} aria-hidden="true" />
-                </button>
-              </div>
-
-              <nav aria-label="Mobile navigation" className="flex-1 overflow-y-auto px-4 py-4">
-                <ul className="space-y-1" role="list">
-                  {navLinks.map((link, i) => (
-                    <motion.li
-                      key={link.href}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.05 + i * 0.05, type: 'spring', damping: 30 }}
-                    >
-                      <Link
-                        href={link.href}
-                        onClick={() => setMobileOpen(false)}
-                        className={cn(
-                          'flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-medium transition-colors duration-150',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet',
-                          isActive(link.href)
-                            ? 'text-violet bg-violet/10'
-                            : 'text-[var(--text)] hover:bg-white/5'
-                        )}
-                      >
-                        {link.label}
-                      </Link>
-                    </motion.li>
-                  ))}
+              <ul className="space-y-1" role="list">
+                {[
+                  ...navLinks,
+                  { label: 'Deals', href: '/deals' },
+                  { label: 'New Arrivals', href: '/new-arrivals' },
+                ].map((link, i) => (
                   <motion.li
-                    initial={{ opacity: 0, x: 20 }}
+                    key={link.href}
+                    initial={{ opacity: 0, x: -24 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.25, type: 'spring', damping: 30 }}
-                  >
-                    <Link
-                      href="/deals"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-medium text-danger hover:bg-danger/5 transition-colors"
-                    >
-                      <Flame size={16} aria-hidden="true" />
-                      Deals
-                    </Link>
-                  </motion.li>
-                  <motion.li
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3, type: 'spring', damping: 30 }}
-                  >
-                    <Link
-                      href="/new-arrivals"
-                      onClick={() => setMobileOpen(false)}
-                      className="flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-medium text-[var(--text)] hover:bg-white/5 transition-colors"
-                    >
-                      <Sparkles size={16} className="text-success" aria-hidden="true" />
-                      New Arrivals
-                    </Link>
-                  </motion.li>
-                </ul>
-
-                <div className="mt-4 pt-4 border-t border-[var(--border)] space-y-1">
-                  <Link
-                    href="/account"
-                    onClick={() => setMobileOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-2xl text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet"
-                  >
-                    <User size={18} aria-hidden="true" />
-                    Account
-                  </Link>
-                  <button
-                    onClick={() => {
-                      setMobileOpen(false)
-                      openDrawer()
+                    transition={{
+                      delay: 0.04 + i * 0.05,
+                      type: 'spring',
+                      damping: 28,
+                      stiffness: 320,
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet"
                   >
-                    <ShoppingCart size={18} aria-hidden="true" />
-                    Cart {itemCount > 0 && `(${itemCount})`}
-                  </button>
-                </div>
-              </nav>
+                    <Link
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      className={cn(
+                        'flex items-center px-4 py-3.5 rounded-2xl text-lg font-semibold transition-colors duration-150',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet',
+                        isActive(link.href)
+                          ? 'text-violet bg-violet/10'
+                          : 'text-[var(--text)] hover:bg-white/5'
+                      )}
+                    >
+                      {link.label}
+                    </Link>
+                  </motion.li>
+                ))}
+              </ul>
 
-              <div className="px-4 py-4 border-t border-[var(--border)]">
-                <div className="flex items-center gap-3 px-4">
-                  <ThemeToggle />
-                  <span className="text-xs text-[var(--muted)]">Toggle theme</span>
-                </div>
-              </div>
+              {/* Secondary actions */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.35 }}
+                className="mt-6 pt-6 border-t border-[var(--border)] space-y-1"
+              >
+                <Link
+                  href="/account"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-2xl text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/5 transition-colors"
+                >
+                  <User size={18} aria-hidden="true" />
+                  Account
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileOpen(false)
+                    openDrawer()
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[var(--muted)] hover:text-[var(--text)] hover:bg-white/5 transition-colors"
+                >
+                  <ShoppingCart size={18} aria-hidden="true" />
+                  Cart {itemCount > 0 && `(${itemCount})`}
+                </button>
+              </motion.div>
+            </nav>
+
+            {/* Footer: theme + accent */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="relative z-10 px-6 py-5 border-t border-[var(--border)] flex items-center gap-4"
+            >
+              <ThemeToggle />
+              <span className="text-xs text-[var(--muted)]">Theme</span>
             </motion.div>
-          </>
+          </motion.div>
         )}
       </AnimatePresence>
     </>

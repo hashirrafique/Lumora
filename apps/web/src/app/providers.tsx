@@ -5,6 +5,8 @@ import { useState, useEffect, type ReactNode } from 'react'
 import { authApi } from '@/lib/api'
 import { useAuthStore } from '@/store/auth.store'
 import { connectSocket, disconnectSocket } from '@/lib/socket'
+import { useLenisInit } from '@/lib/hooks/useLenis'
+import { useReducedMotion } from '@/lib/hooks/useReducedMotion'
 
 const API_BASE = process.env['NEXT_PUBLIC_API_URL'] ?? 'http://localhost:4000/api/v1'
 
@@ -79,14 +81,23 @@ function SwBootstrap() {
   return null
 }
 
+function LenisBootstrap() {
+  const reduced = useReducedMotion()
+  useLenisInit(reduced)
+  return null
+}
+
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
-            staleTime: 60 * 1000,
-            retry: 1,
+            staleTime: 60_000,
+            gcTime: 5 * 60_000,
+            retry: 3,
+            retryDelay: (n) => Math.min(1_000 * 2 ** n, 8_000),
+            refetchOnWindowFocus: false,
           },
         },
       })
@@ -98,6 +109,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <AuthBootstrap />
       <SocketBootstrap />
       <SwBootstrap />
+      <LenisBootstrap />
       {children}
     </QueryClientProvider>
   )

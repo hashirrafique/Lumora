@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth.store'
 import { useLogout } from '@/lib/hooks/useAuth'
+import { useProducts } from '@/lib/hooks/useProducts'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -26,11 +27,17 @@ const NAV = [
   { href: '/admin/discounts', label: 'Discounts', icon: Tag },
 ]
 
+function useLowStockCount() {
+  const { data } = useProducts({ limit: 100 })
+  return (data?.products ?? []).filter((p) => p.stock <= 5).length
+}
+
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const user = useAuthStore((s) => s.user)
   const router = useRouter()
   const pathname = usePathname()
   const logout = useLogout()
+  const lowStockCount = useLowStockCount()
 
   useEffect(() => {
     if (user === null) {
@@ -63,6 +70,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <nav className="flex-1 px-3 py-4 space-y-0.5" aria-label="Admin navigation">
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = pathname.startsWith(href)
+            const showBadge = href === '/admin/products' && lowStockCount > 0
             return (
               <Link
                 key={href}
@@ -78,7 +86,14 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               >
                 <Icon size={16} aria-hidden="true" />
                 {label}
-                {active && <ChevronRight size={14} className="ml-auto" aria-hidden="true" />}
+                {showBadge && (
+                  <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-danger/90 text-white text-[10px] font-bold flex items-center justify-center">
+                    {lowStockCount}
+                  </span>
+                )}
+                {active && !showBadge && (
+                  <ChevronRight size={14} className="ml-auto" aria-hidden="true" />
+                )}
               </Link>
             )
           })}

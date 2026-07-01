@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { Sparkles, ArrowRight } from 'lucide-react'
 import { FadeUp } from '@/components/ui/FadeUp'
 import { ProductCard } from '@/components/product/ProductCard'
+import { SectionError } from '@/components/ui/SectionError'
 import { useProducts } from '@/lib/hooks/useProducts'
 
 export function NewArrivalsSection() {
-  const { data, isLoading } = useProducts({ sort: 'newest', limit: 6 })
+  const { data, isLoading, isError, refetch } = useProducts({ sort: 'newest', limit: 6 })
   const products = data?.products ?? []
 
   return (
@@ -28,7 +29,9 @@ export function NewArrivalsSection() {
         </Link>
       </FadeUp>
 
-      {isLoading ? (
+      {isError ? (
+        <SectionError onRetry={refetch} />
+      ) : isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="glass rounded-3xl aspect-[3/4] animate-pulse" />

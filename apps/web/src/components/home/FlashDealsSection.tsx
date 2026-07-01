@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Flame, ArrowRight } from 'lucide-react'
 import { FadeUp } from '@/components/ui/FadeUp'
 import { ProductCard } from '@/components/product/ProductCard'
+import { SectionError } from '@/components/ui/SectionError'
 import { useProducts } from '@/lib/hooks/useProducts'
 
 function getTimeUntilMidnight() {
@@ -39,7 +40,7 @@ function Digit({ value, label }: { value: number; label: string }) {
 
 export function FlashDealsSection() {
   const [time, setTime] = useState(getTimeUntilMidnight())
-  const { data, isLoading } = useProducts({ featured: true, limit: 4 })
+  const { data, isLoading, isError, refetch } = useProducts({ featured: true, limit: 4 })
   const products = data?.products ?? []
 
   useEffect(() => {
@@ -82,7 +83,9 @@ export function FlashDealsSection() {
       </FadeUp>
 
       {/* Products */}
-      {isLoading ? (
+      {isError ? (
+        <SectionError onRetry={refetch} />
+      ) : isLoading ? (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="glass rounded-3xl aspect-[3/4] animate-pulse" />

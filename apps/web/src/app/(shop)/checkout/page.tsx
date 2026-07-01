@@ -46,6 +46,7 @@ export default function CheckoutPage() {
 
   const [step, setStep] = useState(0)
   const [placedOrderNumber, setPlacedOrderNumber] = useState('')
+  const [placedOrderTotal, setPlacedOrderTotal] = useState(0)
 
   const [address, setAddress] = useState<Partial<AddressDTO>>({
     fullName: user?.name ?? '',
@@ -130,6 +131,7 @@ export default function CheckoutPage() {
     }
     try {
       const order = await placeOrder.mutateAsync({ input, idempotencyKey })
+      setPlacedOrderTotal(cart?.total ?? 0)
       setPlacedOrderNumber(order.orderNumber)
       goToStep(4)
     } catch (err) {
@@ -208,6 +210,23 @@ export default function CheckoutPage() {
                 Continue shopping
               </Link>
             </motion.div>
+
+            {placedOrderTotal > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.5, duration: dur.base, ease: ease.out }}
+                className="glass rounded-2xl px-6 py-4 border border-violet/20 text-center"
+              >
+                <p className="text-sm text-[var(--muted)]">
+                  You&apos;ve earned{' '}
+                  <strong className="text-violet font-semibold">
+                    {Math.round(placedOrderTotal * 4)} Lumora Points
+                  </strong>{' '}
+                  — redeemable on your next order!
+                </p>
+              </motion.div>
+            )}
           </motion.div>
         </AnimatePresence>
       </div>

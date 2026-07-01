@@ -12,13 +12,16 @@ import { CookieBanner } from '@/components/ui/CookieBanner'
 import { CompareBar } from '@/components/ui/CompareBar'
 import { CartFly } from '@/components/ui/CartFly'
 import { OnboardingModal } from '@/components/ui/OnboardingModal'
+import { PageTransition } from '@/components/ui/PageTransition'
 
 export default function ShopLayout({ children }: { children: ReactNode }) {
   return (
     <ToastProvider>
       <AnnouncementBar />
       <Navbar />
-      <main id="main-content">{children}</main>
+      <main id="main-content">
+        <PageTransition>{children}</PageTransition>
+      </main>
       <Footer />
       <CartDrawer />
       <AIChatDock />

@@ -5,9 +5,11 @@ import { env } from '../config/env'
 
 function makeStore(prefix: string) {
   if (env.NODE_ENV === 'test') return undefined // use memory store in tests
+  const redis = getRedis()
+  if (!redis) return undefined // no Redis URL — fall back to in-memory store
   return new RedisStore({
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    sendCommand: (...args: string[]) => getRedis().call(args[0]!, ...args.slice(1)) as any,
+    sendCommand: (...args: string[]) => redis.call(args[0]!, ...args.slice(1)) as any,
     prefix: `rl:${prefix}:`,
   })
 }

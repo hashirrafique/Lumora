@@ -29,7 +29,8 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
+  // standalone is for Docker; Vercel uses its own output format
+  output: process.env.VERCEL ? undefined : 'standalone',
   transpilePackages: ['@lumora/types'],
   images: {
     remotePatterns: [

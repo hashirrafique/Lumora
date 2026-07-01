@@ -1,6 +1,6 @@
 import { User } from '../models/user.model'
 import { ApiError } from '../utils/ApiError'
-import type { PaginationMeta } from '@lumora/types'
+import type { PaginationMeta } from '../types'
 
 export async function listUsers(
   q: string | undefined,
@@ -9,10 +9,11 @@ export async function listUsers(
   limit: number
 ): Promise<{ users: unknown[]; meta: PaginationMeta }> {
   const filter: Record<string, unknown> = {}
-  if (q) filter['$or'] = [
-    { name: { $regex: new RegExp(q, 'i') } },
-    { email: { $regex: new RegExp(q, 'i') } },
-  ]
+  if (q)
+    filter['$or'] = [
+      { name: { $regex: new RegExp(q, 'i') } },
+      { email: { $regex: new RegExp(q, 'i') } },
+    ]
   if (role) filter['role'] = role
 
   const skip = (page - 1) * limit

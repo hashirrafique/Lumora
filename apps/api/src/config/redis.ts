@@ -3,7 +3,8 @@ import { env } from './env'
 
 let client: Redis | null = null
 
-export function getRedis(): Redis {
+export function getRedis(): Redis | null {
+  if (!env.REDIS_URL) return null
   if (!client) {
     client = new Redis(env.REDIS_URL, {
       maxRetriesPerRequest: 3,
@@ -24,13 +25,21 @@ export function getRedis(): Redis {
   return client
 }
 
-export function getRedisStatus(): 'up' | 'down' {
+export function getRedisStatus(): 'up' | 'down' | 'disabled' {
+  if (!env.REDIS_URL) return 'disabled'
   if (!client) return 'down'
   return client.status === 'ready' ? 'up' : 'down'
 }
 
 export async function connectRedis(): Promise<void> {
-  const r = getRedis()
+  if (!env.REDIS_URL) {
+    // eslint-disable-next-line no-console
+    console.log(
+      '[redis] REDIS_URL not set — running without Redis (rate-limit falls back to memory)'
+    )
+    return
+  }
+  const r = getRedis()!
   await r.connect()
 }
 

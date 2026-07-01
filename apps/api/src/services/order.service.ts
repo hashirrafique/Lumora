@@ -9,7 +9,7 @@ import { simulatePayment } from '../lib/payment/simulate'
 import { getRedis } from '../config/redis'
 import { emitStockUpdate, emitOrderStatus } from '../sockets'
 import type { CreateOrderInput } from '../schemas/order.schema'
-import type { PaginationMeta } from '@lumora/types'
+import type { PaginationMeta } from '../types'
 import { env } from '../config/env'
 
 const IDEMPOTENCY_TTL = 60 * 60 * 24 // 24 hours
@@ -22,10 +22,12 @@ export async function createOrder(
   // ── Idempotency check ────────────────────────────────────────────────────
   if (idempotencyKey) {
     const redis = getRedis()
-    const cached = await redis.get(`idem:order:${idempotencyKey}`)
-    if (cached) {
-      const order = await Order.findById(cached).lean()
-      if (order) return order
+    if (redis) {
+      const cached = await redis.get(`idem:order:${idempotencyKey}`)
+      if (cached) {
+        const order = await Order.findById(cached).lean()
+        if (order) return order
+      }
     }
   }
 
@@ -74,7 +76,9 @@ export async function createOrder(
   let couponCode: string | undefined
 
   if (cart.coupon) {
-    const coupon = await Coupon.findById(cart.coupon).select('code type value minSubtotal maxUses usedCount expiresAt isActive')
+    const coupon = await Coupon.findById(cart.coupon).select(
+      'code type value minSubtotal maxUses usedCount expiresAt isActive'
+    )
     if (
       coupon &&
       coupon.isActive &&
@@ -111,9 +115,7 @@ export async function createOrder(
           { session, new: true }
         )
         if (!updated) {
-          throw ApiError.badRequest(
-            `"${prod.title}" does not have enough stock for your order`
-          )
+          throw ApiError.badRequest(`"${prod.title}" does not have enough stock for your order`)
         }
       }
 
@@ -172,11 +174,7 @@ export async function createOrder(
       )
 
       if (cart.coupon) {
-        await Coupon.findByIdAndUpdate(
-          cart.coupon,
-          { $inc: { usedCount: 1 } },
-          { session }
-        )
+        await Coupon.findByIdAndUpdate(cart.coupon, { $inc: { usedCount: 1 } }, { session })
       }
 
       createdOrder = order!
@@ -192,7 +190,7 @@ export async function createOrder(
   // Store idempotency key
   if (idempotencyKey) {
     const redis = getRedis()
-    await redis.setex(`idem:order:${idempotencyKey}`, IDEMPOTENCY_TTL, orderId)
+    if (redis) await redis.setex(`idem:order:${idempotencyKey}`, IDEMPOTENCY_TTL, orderId)
   }
 
   // Emit stock:update for each item (post-commit, best-effort)
@@ -253,10 +251,7 @@ export async function getOrder(
   return order
 }
 
-export async function updateOrderStatus(
-  orderId: string,
-  status: string,
-): Promise<unknown> {
+export async function updateOrderStatus(orderId: string, status: string): Promise<unknown> {
   const order = await Order.findById(orderId)
   if (!order) throw ApiError.notFound('Order')
   if (order.status === 'cancelled' && status !== 'cancelled') {
@@ -276,7 +271,7 @@ export async function updateOrderStatus(
 export async function listAllOrders(
   status: string | undefined,
   page = 1,
-  limit = 20,
+  limit = 20
 ): Promise<{ orders: unknown[]; meta: PaginationMeta }> {
   const filter: Record<string, unknown> = {}
   if (status) filter['status'] = status

@@ -1,8 +1,12 @@
 import { Product } from '../models/product.model'
 import { ApiError } from '../utils/ApiError'
 import { uniqueSlug } from '../utils/slug'
-import type { CreateProductInput, UpdateProductInput, ProductListQuery } from '../schemas/product.schema'
-import type { PaginationMeta } from '@lumora/types'
+import type {
+  CreateProductInput,
+  UpdateProductInput,
+  ProductListQuery,
+} from '../schemas/product.schema'
+import type { PaginationMeta } from '../types'
 
 export async function listProducts(query: ProductListQuery): Promise<{
   products: unknown[]
@@ -86,7 +90,9 @@ export async function updateProduct(id: string, input: UpdateProductInput): Prom
   if (!product) throw ApiError.notFound('Product')
 
   if (input.title && input.title !== product.title) {
-    input = { ...input, slug: await uniqueSlug(input.title, id) } as UpdateProductInput & { slug: string }
+    input = { ...input, slug: await uniqueSlug(input.title, id) } as UpdateProductInput & {
+      slug: string
+    }
   }
 
   Object.assign(product, input)

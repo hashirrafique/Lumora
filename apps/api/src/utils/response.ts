@@ -1,5 +1,5 @@
 import type { Response } from 'express'
-import type { PaginationMeta } from '@lumora/types'
+import type { PaginationMeta } from '../types'
 
 export function sendSuccess<T>(
   res: Response,

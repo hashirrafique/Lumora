@@ -1,4 +1,4 @@
-import type { ErrorCode } from '@lumora/types'
+import type { ErrorCode } from '../types'
 
 export class ApiError extends Error {
   public readonly statusCode: number

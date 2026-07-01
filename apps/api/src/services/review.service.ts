@@ -4,7 +4,7 @@ import { Product } from '../models/product.model'
 import { Order } from '../models/order.model'
 import { ApiError } from '../utils/ApiError'
 import type { CreateReviewInput } from '../schemas/review.schema'
-import type { PaginationMeta } from '@lumora/types'
+import type { PaginationMeta } from '../types'
 
 async function recomputeRating(productId: string | mongoose.Types.ObjectId): Promise<void> {
   const agg = await Review.aggregate([
@@ -104,11 +104,9 @@ export async function listAllReviews(
 }
 
 export async function approveReview(reviewId: string, isApproved: boolean): Promise<unknown> {
-  const review = await Review.findByIdAndUpdate(
-    reviewId,
-    { isApproved },
-    { new: true }
-  ).populate('user', 'name').lean()
+  const review = await Review.findByIdAndUpdate(reviewId, { isApproved }, { new: true })
+    .populate('user', 'name')
+    .lean()
   if (!review) throw ApiError.notFound('Review')
   await recomputeRating(review.product)
   return review

@@ -8,7 +8,7 @@ const envSchema = z.object({
     .default('http://localhost:3000')
     .transform((v) => v.split(',').map((s) => s.trim())),
   MONGODB_URI: z.string().min(1, 'MONGODB_URI is required'),
-  REDIS_URL: z.string().min(1, 'REDIS_URL is required'),
+  REDIS_URL: z.string().optional(),
   JWT_ACCESS_SECRET: z.string().min(32, 'JWT_ACCESS_SECRET must be ≥32 chars'),
   JWT_REFRESH_SECRET: z.string().min(32, 'JWT_REFRESH_SECRET must be ≥32 chars'),
   ACCESS_TTL: z.string().default('15m'),

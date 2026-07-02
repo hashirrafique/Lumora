@@ -23,7 +23,7 @@ import { productsApi } from '@/lib/api'
 import { useCartStore } from '@/store/cart.store'
 import { useUIStore } from '@/store/ui.store'
 import { spring } from '@/lib/motion'
-import type { ProductDTO } from '@lumora/types'
+import type { ProductDTO } from '@/lib/api'
 
 type ActionItem = {
   type: 'action'

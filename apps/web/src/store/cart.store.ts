@@ -2,7 +2,10 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { CartVariant } from '@lumora/types'
+export interface CartVariant {
+  name: string
+  value: string
+}
 
 export interface GuestCartItem {
   productId: string
@@ -42,9 +45,7 @@ export const useCartStore = create<CartState>()(
       addItem: (item) => {
         const key = variantKey(item.productId, item.variant)
         set((state) => {
-          const existing = state.guestItems.find(
-            (i) => variantKey(i.productId, i.variant) === key
-          )
+          const existing = state.guestItems.find((i) => variantKey(i.productId, i.variant) === key)
           if (existing) {
             return {
               guestItems: state.guestItems.map((i) =>
@@ -62,9 +63,7 @@ export const useCartStore = create<CartState>()(
         const key = variantKey(productId, variant)
         if (qty <= 0) {
           set((state) => ({
-            guestItems: state.guestItems.filter(
-              (i) => variantKey(i.productId, i.variant) !== key
-            ),
+            guestItems: state.guestItems.filter((i) => variantKey(i.productId, i.variant) !== key),
           }))
         } else {
           set((state) => ({
@@ -78,9 +77,7 @@ export const useCartStore = create<CartState>()(
       removeItem: (productId, variant) => {
         const key = variantKey(productId, variant)
         set((state) => ({
-          guestItems: state.guestItems.filter(
-            (i) => variantKey(i.productId, i.variant) !== key
-          ),
+          guestItems: state.guestItems.filter((i) => variantKey(i.productId, i.variant) !== key),
         }))
       },
 
